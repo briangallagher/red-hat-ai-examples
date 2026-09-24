@@ -220,9 +220,9 @@ When a user or group needs access to registry metadata but must not receive broa
 
 | ClusterRole | Registry access |
 | --- | --- |
-| `feast-data-registry-viewer` | List, view, and watch registry resources. |
-| `feast-data-registry-editor` | Create, update, and delete registry resources. |
-| `feast-data-registry-admin` | Editor access plus use of referenced RHOAI connections. |
+| `data-registry-viewer` | List, view, and watch registry resources. |
+| `data-registry-editor` | Create, update, and delete registry resources. |
+| `data-registry-admin` | Editor access plus use of referenced RHOAI connections. |
 
 These ClusterRoles are installed and maintained by the operator. Do not edit them or create a duplicate namespaced Role. A namespaced RoleBinding limits the ClusterRole grant to Data Registry resources in the selected project.
 
@@ -232,7 +232,7 @@ For reference, the generated viewer ClusterRole is equivalent to this abbreviate
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: feast-data-registry-viewer
+  name: data-registry-viewer
 rules:
   - apiGroups:
       - dataregistry.opendatahub.io
@@ -251,14 +251,14 @@ rules:
 Replace the example values and grant viewer access to a user:
 
 ```bash
-oc adm policy add-role-to-user feast-data-registry-viewer \
+oc adm policy add-role-to-user data-registry-viewer \
   example-user -n example-project
 ```
 
 Or grant it to a group:
 
 ```bash
-oc adm policy add-role-to-group feast-data-registry-viewer \
+oc adm policy add-role-to-group data-registry-viewer \
   example-group -n example-project
 ```
 
