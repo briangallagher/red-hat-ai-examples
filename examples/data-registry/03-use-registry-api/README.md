@@ -27,11 +27,10 @@ in the bucket named by the asset and connection. Use your Step 2 project name
 in the notebook if you created these resources in another project.
 
 You need a user token authorized to read and create Data Registry catalog
-entries in that project. The notebook prompts for your token at run time; the
-empty `USER_TOKEN` setting is also a placeholder if you prefer to enter it in
-a temporary notebook copy. Clear any pasted token before saving or sharing
-that copy. The workbench's ServiceAccount is not used to authenticate the
-registry requests.
+entries in that project. Leave `USER_TOKEN` empty and enter your token at the
+notebook's hidden prompt. The workbench's ServiceAccount is not used to
+authenticate the registry requests. Do not paste a token into a notebook
+cell: JupyterLab can autosave it to disk.
 
 Your user needs project access to create or open the workbench, attach the
 connection, and read and create Data Registry entries. On this cluster, the
@@ -42,11 +41,14 @@ can be used if it grants the same API operations and `connections use` in the
 project; [Step 4](../04-share-registry-access/README.md) covers role
 assignments.
 
-> **Verification limit:** The successful run used a **cluster-admin user's
-> token**. The role rules indicate that project `admin` should be sufficient
-> on this cluster, but the notebook has **not yet been run with a
-> non-cluster-admin project admin token**. Cluster-admin is not an intended
-> prerequisite for this example.
+> **Verification scope:** The first run used a **cluster-admin user's token**.
+> A later run with non-cluster-admin `endUser1` bound to project `admin`
+> passed the notebook's API reads, S3 checksum, fresh collection and volume
+> creation, complete field read-back, and safe rerun. That user opened the
+> existing workbench; creating a new workbench and entering the token at the
+> interactive notebook prompt as that user remain unverified. The validated
+> notebook runs supplied the user token privately to the kernel and did not
+> use the workbench ServiceAccount for registry requests.
 
 ## 2. Create the workbench and attach the connection
 
@@ -151,7 +153,7 @@ Run the notebook cells **in order**:
 | Asset list and detail | `customer-support-faq` is a `documents` volume at the Step 2 S3 prefix, with a typed reference to `data-registry-storage`. |
 | S3 list and download | The attached connection lists and downloads `examples/customer-support/customer-support-faq.md`. |
 | Checksum | The downloaded file's SHA-256 is `e5be400a6740cb71a0ae93606a194f6cfcde5db09460b8c88c6e50afb0e57f78`. |
-| API registration | A `customer-support-api` collection and `customer-support-faq-api` volume are created or safely reused, then read back with every supplied field. The API stores purpose, license, maturity, domain, and PII under `properties`. |
+| API registration | A `customer-support-api` collection and `customer-support-faq-api` volume are created or safely reused, then read back with every supplied field. Send purpose, license, maturity, domain, and PII as top-level POST fields; the GET response returns them under `properties`. |
 
 The API registration creates metadata only; it does not upload or copy an S3
 object. A rerun reuses the two API-created entries only when their marker and
