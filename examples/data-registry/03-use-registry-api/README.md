@@ -33,6 +33,21 @@ a temporary notebook copy. Clear any pasted token before saving or sharing
 that copy. The workbench's ServiceAccount is not used to authenticate the
 registry requests.
 
+Your user needs project access to create or open the workbench, attach the
+connection, and read and create Data Registry entries. On this cluster, the
+OpenShift `admin` role bound in the Step 2 project includes the required
+registry operations and `connections use`. The attached S3 credentials must
+also allow listing and reading the fixture object. A narrower registry role
+can be used if it grants the same API operations and `connections use` in the
+project; [Step 4](../04-share-registry-access/README.md) covers role
+assignments.
+
+> **Verification limit:** The successful run used a **cluster-admin user's
+> token**. The role rules indicate that project `admin` should be sufficient
+> on this cluster, but the notebook has **not yet been run with a
+> non-cluster-admin project admin token**. Cluster-admin is not an intended
+> prerequisite for this example.
+
 ## 2. Create the workbench and attach the connection
 
 In the RHOAI dashboard, open **Projects**, select your Step 2 project, open
@@ -59,17 +74,41 @@ create a ServiceAccount RoleBinding, or upload a CA file for this user-token
 flow. The notebook checks these runtime prerequisites and stops with a clear
 message if they are absent on another installation.
 
-> **Screenshots to add:** Completed Create workbench form showing the image,
-> hardware profile, 5 GiB storage, and selected connection; then the Ready
-> workbench row. Keep connection details and credential values out of images.
+The screenshots below show the **scratch project used for verification**.
+Use your own Step 2 project and its connection when following the guide.
+
+<details>
+<summary>See the verified workbench screens</summary>
+
+![Workbench name and Python 3.12 image selected](images/create-workbench-name-image.png)
+
+![Default CPU profile and 5 GiB home storage](images/create-workbench-resources-storage.png)
+
+![Existing data-registry-storage connection attached](images/create-workbench-connection.png)
+
+![Data Registry API workbench in Ready state](images/workbench-ready.png)
+
+</details>
 
 ## 3. Upload and run the notebook
 
 In JupyterLab, upload
 [data-registry-api-walkthrough.ipynb](data-registry-api-walkthrough.ipynb)
 to the workbench home folder and open it with the Python 3.12 kernel.
-If browser upload is unavailable, use this tested CLI fallback from this
-guide's directory in a checkout. Set `PROJECT` to your Step 2 namespace:
+The fresh JupyterLab launcher looks like this before upload:
+
+<details>
+<summary>See the JupyterLab launcher</summary>
+
+![Fresh JupyterLab launcher with Python 3.12 kernel](images/jupyterlab-launcher.png)
+
+</details>
+
+If browser upload is unavailable, use the tested CLI fallback below from this
+guide's directory in a checkout. Set `PROJECT` to your Step 2 namespace.
+
+<details>
+<summary>CLI upload fallback</summary>
 
 ```bash
 PROJECT=data-registry-example
@@ -81,6 +120,8 @@ oc cp data-registry-api-walkthrough.ipynb \
   "$PROJECT/$POD:/opt/app-root/src/data-registry-api-walkthrough.ipynb" \
   -c "$CONTAINER"
 ```
+
+</details>
 
 The first code cell runs `%pip install` for `requests` and `boto3` in the
 active kernel. It uses the package index configured for that workbench; if
@@ -115,10 +156,6 @@ Run the notebook cells **in order**:
 The API registration creates metadata only; it does not upload or copy an S3
 object. A rerun reuses the two API-created entries only when their marker and
 metadata match. The notebook does not delete project resources or storage.
-
-> **Screenshots to add:** The configuration and verification cells without
-> a token; authenticated collection list; S3 checksum; API-created asset
-> read-back; final success summary.
 
 ## If a check fails
 
