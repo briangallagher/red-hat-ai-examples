@@ -42,13 +42,19 @@ project; [Step 4](../04-share-registry-access/README.md) covers role
 assignments.
 
 > **Verification scope:** The first run used a **cluster-admin user's token**.
-> A later run with non-cluster-admin `endUser1` bound to project `admin`
-> passed the notebook's API reads, S3 checksum, fresh collection and volume
-> creation, complete field read-back, and safe rerun. That user opened the
-> existing workbench; creating a new workbench and entering the token at the
-> interactive notebook prompt as that user remain unverified. The validated
-> notebook runs supplied the user token privately to the kernel and did not
-> use the workbench ServiceAccount for registry requests.
+> For the decisive permissions check, non-cluster-admin `endUser1` was bound to
+> project `admin` in the Step 2 scratch project. That user created a new
+> workbench in the dashboard, attached the existing connection, and uploaded
+> the notebook. With only `PROJECT` changed to the scratch namespace, all ten
+> code cells passed in that new workbench using the user's token, including
+> API reads, the S3 checksum, and safe reuse of existing API entries. A
+> separate run in the original workbench created fresh metadata with the same
+> user's token and verified every field on read-back. The token was passed
+> privately to a separate kernel for the full runs; the notebook's masked
+> interactive prompt was checked separately with non-secret input. Registry
+> requests did not use the workbench ServiceAccount. Project `admin` plus
+> ordinary authenticated access was sufficient on the verified cluster;
+> permissions may differ on another installation.
 
 ## 2. Create the workbench and attach the connection
 
@@ -69,12 +75,13 @@ the connection by name in **Connections**; there is no credential entry or
 Secret mount path to configure. Leave **Connected feature stores** empty for
 this example. Create the workbench, wait for **Ready**, and open JupyterLab.
 
-The cluster automatically labeled the workbench pod for registry ingress,
-projected the public OpenShift service CA, and supplied the attached
-connection's settings to the workbench. You do not need to patch a pod label,
-create a ServiceAccount RoleBinding, or upload a CA file for this user-token
-flow. The notebook checks these runtime prerequisites and stops with a clear
-message if they are absent on another installation.
+The verified workbench received its normal pod labels, the public OpenShift
+service CA, and the attached connection's settings automatically. Its notebook
+reached the registry Service without a manual pod-label change. You do not
+need to patch a pod label, create a ServiceAccount RoleBinding, or upload a CA
+file for this user-token flow on the verified cluster. The notebook checks
+these runtime prerequisites and stops with a clear message if they are absent
+on another installation.
 
 The screenshots below show the **scratch project used for verification**.
 Use your own Step 2 project and its connection when following the guide.
@@ -168,7 +175,7 @@ metadata match. The notebook does not delete project resources or storage.
 | Registry HTTP 401 with your token | Check that you supplied a current user token and that the notebook sends it to the registry Service. |
 | Registry HTTP 403 | Check your user's Data Registry role in this project. Step 4 describes grants for users and groups. |
 | TLS certificate error | Check that the workbench projects the public `service-ca.crt` and that the Service hostname matches its certificate. Keep verification enabled. |
-| Registry timeout | Check workbench readiness and network access to the registry Service on port 443. The verified pod received the ingress label automatically. |
+| Registry timeout | Check workbench readiness and network access to the registry Service on port 443. The verified workbench reached the Service without a manual pod-label change. |
 | Connection or path differs | Compare the asset detail page with Step 2. The notebook intentionally rejects a different resource. |
 | S3 HTTP 403 or timeout | Check the connection, bucket permissions, and network path. SeaweedFS uses its S3 API on port 8333; its Admin port is not an S3 endpoint. |
 | SHA-256 mismatch | Inspect the current object before replacing the fixture. Reupload only when this test key is yours. |
