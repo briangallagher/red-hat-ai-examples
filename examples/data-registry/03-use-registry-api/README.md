@@ -4,291 +4,136 @@
 [Step 4: Share access →](../04-share-registry-access/README.md) ·
 [Guide index](../README.md)
 
-This step turns the metadata created in Step 2 into a reproducible API exercise.
-You create a JupyterLab workspace in the project, mount the same S3 connection,
-and run the [guided notebook](data-registry-api-walkthrough.ipynb). The notebook reads the
-collection and asset through the authenticated Data Registry API, checks the
-connection reference and S3 path, then lists and downloads the synthetic FAQ
-from the selected S3-compatible store. SeaweedFS is the default evaluation
-path; if you used an organization-provided service in Step 2, the notebook
-uses that service through the same project connection.
+Use a Jupyter workbench to read the metadata registered in Step 2, download
+the synthetic FAQ through its attached S3 connection, and register a second
+catalog entry through the API. The registry stores metadata and a connection
+reference; the S3 request separately verifies access to the document bytes.
+The connection's dashboard **Verify** status does not substitute for the
+workbench's list and download checks.
 
-The notebook follows the discovery, reference-checking, download, and
-verification sequence in the
-[PDF volume example](https://gitlab.cee.redhat.com/data-strategy/data-registry-production/-/tree/main/notebook-examples/rhai-s3-pdf-volume-download).
-This example uses one small Markdown document so you can see every step without
-a separate producer script. No credentials or bearer tokens are printed.
+This step uses the project **Workbenches** page available on the RHOAI 3.6
+cluster used for verification. Other installations can offer different
+workbench controls or hardware profiles. The notebook keeps the project,
+collection, asset, service URL, S3 prefix, and expected checksum together in
+one configuration cell. It never prints a user token or S3 credential.
 
 ## 1. Check prerequisites
 
 Complete [Step 2](../02-register-data-asset/README.md). In
-`data-registry-example`, confirm that the `customer-support` collection and
-`customer-support-faq` asset appear, and that the `data-registry-storage`
-connection exists. Keep that connection name to use the workspace and notebook
-defaults, whether it points to SeaweedFS or your organization's S3 service. The
-S3 object must already be uploaded under `examples/customer-support/` in the
-bucket recorded by the connection and asset.
+`data-registry-example`, confirm that the `customer-support` collection,
+`customer-support-faq` asset, and `data-registry-storage` connection exist.
+The object `examples/customer-support/customer-support-faq.md` must already be
+in the bucket named by the asset and connection. Use your Step 2 project name
+in the notebook if you created these resources in another project.
 
-Ask an RHOAI administrator to confirm that WorkbenchesV2 is enabled. On the
-RHOAI 3.6 installation used for this example, both the parent Workbenches
-component and its V2 subcomponent must be `Managed`. The dashboard's
-`workbenchesV2` setting must also be `true` to show the **Workspaces** UI.
-These are cluster-wide settings; project owners should not change them as
-part of registering an asset.
+You need a user token authorized to read and create Data Registry catalog
+entries in that project. The notebook prompts for your token at run time; the
+empty `USER_TOKEN` setting is also a placeholder if you prefer to enter it in
+a temporary notebook copy. Clear any pasted token before saving or sharing
+that copy. The workbench's ServiceAccount is not used to authenticate the
+registry requests.
 
-```bash
-oc get datasciencecluster default-dsc \
-  -o jsonpath='{.spec.components.workbenches.managementState}{" "}{.spec.components.workbenches.workbenchesV2.managementState}{"\n"}'
+## 2. Create the workbench and attach the connection
 
-oc get odhdashboardconfig odh-dashboard-config -n redhat-ods-applications \
-  -o jsonpath='{.spec.dashboardConfig.workbenchesV2}{"\n"}'
-```
+In the RHOAI dashboard, open **Projects**, select your Step 2 project, open
+**Workbenches**, and select **Create workbench**. Enter these settings:
 
-The example uses the supported **Jupyter | Data Science | CPU | Python 3.12
-(3.6)** image. If it lacks `requests`, `boto3`, or `python-dotenv`, install
-the versions in [requirements.txt](requirements.txt) into the workbench kernel
-using its approved package mirror before running the notebook. The optional
-[`.env.example`](../.env.example) contains public names and paths only; the
-attached connection supplies S3 credentials.
+| Setting | Selection |
+| --- | --- |
+| Name | `data-registry-api` |
+| Workbench image | **Jupyter \| Data Science \| CPU \| Python 3.12**, version **3.6** |
+| Hardware profile | An available CPU profile; the verified cluster's `default-profile` provides 2 CPUs and 4 GiB |
+| Home storage | 5 GiB at the default `/opt/app-root/src/` path |
+| Connections | **Attach existing connections** → `data-registry-storage` |
 
-The workbench you will use has a JupyterLab launcher like this after it starts:
+The form initially offered 20 GiB home storage on the verified cluster. Use
+the storage row's **Edit** action to set it to 5 GiB before creation. Select
+the connection by name in **Connections**; there is no credential entry or
+Secret mount path to configure. Leave **Connected feature stores** empty for
+this example. Create the workbench, wait for **Ready**, and open JupyterLab.
 
-![JupyterLab launcher in the running Data Registry workspace](images/jupyterlab-launcher.jpg)
+The cluster automatically labeled the workbench pod for registry ingress,
+projected the public OpenShift service CA, and supplied the attached
+connection's settings to the workbench. You do not need to patch a pod label,
+create a ServiceAccount RoleBinding, or upload a CA file for this user-token
+flow. The notebook checks these runtime prerequisites and stops with a clear
+message if they are absent on another installation.
 
-> **Screenshot to add:** **AI hub → Workspaces** before creating the example.
+> **Screenshots to add:** Completed Create workbench form showing the image,
+> hardware profile, 5 GiB storage, and selected connection; then the Ready
+> workbench row. Keep connection details and credential values out of images.
 
-## 2. Create and connect the workbench
+## 3. Upload and run the notebook
 
-In the RHOAI dashboard, open **AI hub → Workspaces** and select
-**Create workspace**. Select `data-registry-example` as the project/namespace.
-Choose **JupyterLab** as the workspace kind and use these settings:
-
-| Setting | Example selection | Why |
-| --- | --- | --- |
-| Name | `data-registry-api` | Makes this exercise easy to identify. |
-| Image | **Jupyter | Data Science | CPU | Python 3.12 (3.6)** | Opens the supplied `.ipynb` in JupyterLab. |
-| Pod configuration | **Small CPU** (1 CPU, 2 GiB) | Enough for API calls and the small document; no GPU is needed. |
-| Home storage | Create or attach a 5 GiB persistent volume, such as `data-registry-api-home` | Keeps the notebook and downloaded file after a pod restart. |
-| Secret | Attach the existing project connection Secret `data-registry-storage` at `/var/run/secrets/data-registry-storage` | Mounts the S3 settings as files without putting credentials in the notebook. |
-
-Choose the image, pod configuration, and storage class offered by your
-installation. In the form's **Secrets** step, attach the **existing**
-connection Secret; it must be marked mountable for WorkspacesV2. If your UI
-offers attachment only after creation, edit the workspace to add the Secret,
-save, and wait for its restart. Do not copy S3 keys into the notebook.
-Start the workspace and wait until it shows **Running**, then open JupyterLab.
-The Secret mount is read-only; it contains files named `AWS_ACCESS_KEY_ID`,
-`AWS_SECRET_ACCESS_KEY`, `AWS_S3_ENDPOINT`, `AWS_DEFAULT_REGION`, and
-`AWS_S3_BUCKET`. The notebook reads those files without displaying their
-contents. Older notebook-style workbenches may inject the same settings as
-environment variables, which the notebook also supports. Because the notebook
-reads the endpoint, region, and bucket from the connection, these steps work
-with SeaweedFS or another S3-compatible service. The selected endpoint must be
-reachable from the workbench.
-
-> **Screenshot to add:** Create workspace form with project, JupyterLab kind,
-> image, Small CPU, and storage; then the Secrets step with
-> `data-registry-storage` selected (never show Secret values).
->
-> **Screenshot to add:** Running workspace row in **AI hub → Workspaces**.
-
-If the workspace form on your installation does not expose a Secret mount,
-an administrator can create the same tested configuration from
-[workspace.example.yaml](workspace.example.yaml) instead. It creates the 5 GiB
-home volume and JupyterLab workspace, mounts the **existing** connection
-Secret, and includes the registry ingress label discussed below. It does not
-contain a credential or create a RoleBinding:
+In JupyterLab, upload
+[data-registry-api-walkthrough.ipynb](data-registry-api-walkthrough.ipynb)
+to the workbench home folder and open it with the Python 3.12 kernel.
+If browser upload is unavailable, use this tested CLI fallback from this
+guide's directory in a checkout. Set `PROJECT` to your Step 2 namespace:
 
 ```bash
-oc apply -f workspace.example.yaml
-oc get workspace data-registry-api -n data-registry-example \
-  -o jsonpath='{.status.state}{"\n"}'
-```
-
-Wait for `Running`. If your cluster uses a nondefault storage class, set
-`spec.storageClassName` on the PVC in the manifest before applying it.
-
-When the workspace opens, the notebook and requirements file should be visible
-in JupyterLab. The notebook begins with a plain-language explanation of the
-API, storage, and checksum checks:
-
-![Introduction of the guided Data Registry notebook in JupyterLab](images/notebook-introduction.jpg)
-
-## 3. Connect and authorize the workbench in this project
-
-### Allow traffic to the registry Service
-
-The operator-managed registry ingress policy accepts traffic from workbench
-pods labeled `opendatahub.io/feast-integration=true`. On the RHOAI 3.6
-WorkspacesV2 installation used for this example, a newly created JupyterLab
-workspace did not receive that label automatically. If a request to the
-registry Service times out, add the label to this workspace's pod template:
-
-```bash
-oc patch workspace data-registry-api -n data-registry-example \
-  --type=merge \
-  -p '{"spec":{"podTemplate":{"podMetadata":{"labels":{"opendatahub.io/feast-integration":"true"}}}}}'
-```
-
-Wait for the workspace to return to **Running**. This changes only the example
-workspace pod, and uses the existing ingress policy; it does not edit an
-operator-managed NetworkPolicy. Ask the cluster administrator to check the
-policy on another RHOAI version before applying the label there.
-
-### Grant the workspace ServiceAccount registry permissions
-
-The workspace's Kubernetes ServiceAccount is the API caller. The registry
-checks that identity for each request. Mounting the S3 connection lets the
-notebook read the object, but it does not authorize registry API calls. On
-this RHOAI 3.6 cluster the operator supplies these registry roles:
-
-| Role | Registry permissions | Can complete this notebook? |
-| --- | --- | --- |
-| `feast-data-registry-viewer` | Read catalog resources | No; the notebook creates a collection and asset. |
-| `feast-data-registry-admin` | Read and manage catalog resources | Yes. |
-
-The workbench initially received HTTP 403 because its ServiceAccount had no
-Data Registry grant in `data-registry-example`. On this installation the
-registry proxy maps these endpoints to project-scoped registry permissions.
-The notebook needs catalog reads and two creates, so bind the
-operator-provided **admin** role to the workspace ServiceAccount. The S3 read
-is authorized separately by the mounted connection's credentials.
-
-The namespaced RoleBinding below does not grant Kubernetes project
-administration, access to other namespaces, or permission to read the Secret
-through the Kubernetes API. The Secret is mounted separately in the workspace.
-The admin role also includes update, patch, and delete on registry catalog
-resources, so grant it only to this example workspace ServiceAccount.
-
-A project administrator should identify the ServiceAccount of the **new**
-workspace pod and bind the operator-provided role in `data-registry-example`:
-
-```bash
-WORKSPACE_SA="$(oc get pod -n data-registry-example \
-  -l notebooks.kubeflow.org/workspace-name=data-registry-api \
-  -o jsonpath='{.items[0].spec.serviceAccountName}')"
-test -n "$WORKSPACE_SA"
-echo "Workspace ServiceAccount: $WORKSPACE_SA"
-
-oc create rolebinding data-registry-api-admin \
-  --namespace=data-registry-example \
-  --clusterrole=feast-data-registry-admin \
-  --serviceaccount="data-registry-example:$WORKSPACE_SA" \
-  --dry-run=client -o yaml | oc apply -f -
-
-oc auth can-i --list -n data-registry-example \
-  --as="system:serviceaccount:data-registry-example:$WORKSPACE_SA"
-```
-
-In the permission list, confirm that `registries`, `namespaces`, and
-`volumes` in the `dataregistry.opendatahub.io` API group include `get`,
-`list`, and `create`. For this workspace, the ServiceAccount is
-`ws-data-registry-api`. This
-is a **namespaced RoleBinding** to an operator-provided ClusterRole; it does
-not modify that ClusterRole. Use the ServiceAccount reported by your pod.
-See [Step 4](../04-share-registry-access/README.md) for the existing user and
-group sharing examples.
-
-## 4. Supply the public TLS certificate authority
-
-The notebook calls the in-cluster TLS Service
-`https://feast-data-registry-data-registry.rhoai-data-registry.svc:443`.
-OpenShift signs that Service certificate with its service CA. The JupyterLab
-workspace pod projects the **public** service CA at
-`/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt`, beside its
-short-lived ServiceAccount token. Confirm the CA file is mounted:
-
-```bash
-oc exec -n data-registry-example <workspace-pod> -c main -- \
-  test -s /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
-```
-
-The notebook verifies TLS against that file. If your workspace image does not
-project it, export the public CA from `ConfigMap/openshift-service-ca.crt` in
-this project and upload it beside the notebook; set `REGISTRY_CA_BUNDLE` to
-`service-ca.crt`. If your administrator supplies a different trusted CA bundle
-or service hostname, set `REGISTRY_CA_BUNDLE` and `REGISTRY_URL` in the
-notebook configuration cell. Keep certificate validation enabled. The service
-hostname must match a SAN in its serving certificate.
-
-## 5. Upload and run the notebook
-
-Download or clone this repository, then upload
-[data-registry-api-walkthrough.ipynb](data-registry-api-walkthrough.ipynb) and
-[requirements.txt](requirements.txt) to the workspace's persistent folder.
-Alternatively, an administrator can copy them to the Running workspace pod
-with `oc cp`. From this guide's directory in a repository checkout:
-
-```bash
-WORKSPACE_POD="$(oc get pods -n data-registry-example \
-  -l notebooks.kubeflow.org/workspace-name=data-registry-api \
+PROJECT=data-registry-example
+POD="$(oc get pod -n "$PROJECT" -l notebook-name=data-registry-api \
   -o jsonpath='{.items[0].metadata.name}')"
-
+CONTAINER="$(oc get pod "$POD" -n "$PROJECT" \
+  -o jsonpath='{.spec.containers[0].name}')"
 oc cp data-registry-api-walkthrough.ipynb \
-  "data-registry-example/$WORKSPACE_POD:/opt/app-root/src/data-registry-api-walkthrough.ipynb" \
-  -c main
-
-oc cp requirements.txt \
-  "data-registry-example/$WORKSPACE_POD:/opt/app-root/src/requirements.txt" \
-  -c main
+  "$PROJECT/$POD:/opt/app-root/src/data-registry-api-walkthrough.ipynb" \
+  -c "$CONTAINER"
 ```
 
-In JupyterLab:
+The first code cell runs `%pip install` for `requests` and `boto3` in the
+active kernel. It uses the package index configured for that workbench; if
+your installation requires an approved mirror, have it configured before
+running that cell. The verified image already contained both packages.
 
-1. Open the notebook and read its first cell. Check the project, collection,
-   asset, expected S3 prefix, and connection name in the configuration cell.
-2. Select the workbench's Python 3 kernel. If imports fail, install
-   [requirements.txt](requirements.txt) using the approved workbench package
-   mirror, restart the kernel, and run from the top.
-3. Run the cells **in order**. The notebook stops on a failed prerequisite,
-   unexpected HTTP response, wrong connection, wrong object, or hash mismatch.
-4. Confirm the final cell prints a success summary and that
-   `downloads/customer-support-faq.md` exists in the workbench folder.
+Run the notebook cells **in order**:
 
-The notebook performs these checks:
+1. Check the public settings in its configuration cell. For the default
+   walkthrough, keep `data-registry-example`, `customer-support`,
+   `customer-support-faq`, and `data-registry-storage`. For a separate Step 2
+   project, change only `PROJECT` to that project's namespace.
+2. Provide your own OpenShift user token when prompted. The token is sent
+   only in the HTTPS authorization header to the in-cluster registry Service.
+   Do not save a notebook with a pasted token.
+3. Continue through the API and S3 verification cells. They stop on a
+   missing connection setting, unexpected HTTP status, wrong asset metadata,
+   missing object, or checksum mismatch.
+4. Confirm the final success summary and
+   `downloads/customer-support-faq.md` in JupyterLab.
 
-| Notebook section | API or storage action | Expected result |
-| --- | --- | --- |
-| Runtime preflight | Check projected service CA and ServiceAccount token, plus mounted connection setting *presence* | No secret values displayed. |
-| Authentication | GET `/v1/config` without a token, then `/v1/data-registry-example/config` with the workbench token | The proxy denies the anonymous request; project discovery succeeds for an authorized ServiceAccount. |
-| Collections | GET `/v1/data-registry-example/namespaces` | `customer-support` is listed. |
-| Asset list and detail | GET `/v1/data-registry-example/namespaces/customer-support/volumes` and `/volumes/customer-support-faq` | Exact asset, format, path, and connection reference match Step 2. |
-| S3 list and download | `ListObjectsV2`, `GetObject` through the attached connection | The fixture is present and downloaded. |
-| Verification | SHA-256 of the downloaded file | Matches the committed synthetic fixture. |
-| API registration | POST a `customer-support-api` collection and `customer-support-faq-api` volume; GET both | A second catalog entry points at the same S3 prefix and connection. |
+| Notebook check | Expected result |
+| --- | --- |
+| Runtime preflight | The public service CA and five S3 connection setting names are present; no values are shown. |
+| Authentication | Anonymous `GET /v1/config` returns 401; authenticated project config returns 200. |
+| Collections | `GET /v1/{project}/namespaces` includes `customer-support`. |
+| Asset list and detail | `customer-support-faq` is a `documents` volume at the Step 2 S3 prefix, with a typed reference to `data-registry-storage`. |
+| S3 list and download | The attached connection lists and downloads `examples/customer-support/customer-support-faq.md`. |
+| Checksum | The downloaded file's SHA-256 is `e5be400a6740cb71a0ae93606a194f6cfcde5db09460b8c88c6e50afb0e57f78`. |
+| API registration | A `customer-support-api` collection and `customer-support-faq-api` volume are created or safely reused, then read back with every supplied field. The API stores purpose, license, maturity, domain, and PII under `properties`. |
 
-The registry API returns **metadata**. The S3 client uses the workbench's
-attached connection to fetch the **document bytes**. Neither a registry read
-nor a saved connection reference alone proves that a user may read physical
-data. The final S3 call provides that separate check.
+The API registration creates metadata only; it does not upload or copy an S3
+object. A rerun reuses the two API-created entries only when their marker and
+metadata match. The notebook does not delete project resources or storage.
 
-The following screenshots show the results from the running example workspace.
-They show names, paths, and a checksum; no credential or bearer token is
-displayed.
-
-![Authenticated collection list in the executed notebook](images/notebook-authenticated-collections.jpg)
-
-![Document download from the configured S3-compatible store and SHA-256 verification](images/notebook-s3-download.jpg)
-
-![API registration payload for the second asset](images/notebook-api-registration.jpg)
-
-![Completed notebook summary with both assets and verified object](images/notebook-complete.jpg)
+> **Screenshots to add:** The configuration and verification cells without
+> a token; authenticated collection list; S3 checksum; API-created asset
+> read-back; final success summary.
 
 ## If a check fails
 
 | Symptom | What to check |
 | --- | --- |
-| No Workspaces page or create action | Ask the administrator to check both Workbenches management states, component readiness, and the dashboard's `workbenchesV2` setting. |
-| Missing `AWS_*` setting | Mount `data-registry-storage` at `/var/run/secrets/data-registry-storage` and restart the workspace; do not add credentials to the notebook. |
-| Registry request returns 401 | The projected ServiceAccount token is missing, expired, or not sent to the API. Restart the workbench and rerun the preflight. |
-| Registry request returns 403 | Check the workspace pod's actual ServiceAccount and its namespaced admin RoleBinding; check your installed version's authorization mapping. |
-| TLS certificate error | Check the projected `service-ca.crt`, the service hostname, and the cluster's CA rotation. Do not disable verification. |
-| Connection or path differs | Open the asset detail page and correct the metadata in Step 2. The notebook deliberately rejects a different resource. |
-| S3 request returns 403 | Check the attached connection's keys, bucket policy, and S3 API endpoint. For SeaweedFS, use port 8333 rather than Admin port 12646. |
-| Registry request times out | Check that the workspace pod has `opendatahub.io/feast-integration=true` and can reach the registry Service on port 443. |
-| S3 times out | Check DNS, the workbench's network access, and the endpoint port. For SeaweedFS, confirm that the workbench can reach its Service on port 8333; for an external provider, check its required egress and firewall rules. |
-| SHA-256 mismatch | Upload the committed fixture to the documented key again only after inspecting the current object and confirming this test key is yours. |
+| No Workbenches page or create action | Ask an administrator to check the Workbenches component and your project access. This cluster does not offer the WorkspacesV2 UI. |
+| Missing `AWS_*` setting | Confirm that `data-registry-storage` is attached in the workbench's **Connections** section, then restart it. |
+| Registry HTTP 401 with your token | Check that you supplied a current user token and that the notebook sends it to the registry Service. |
+| Registry HTTP 403 | Check your user's Data Registry role in this project. Step 4 describes grants for users and groups. |
+| TLS certificate error | Check that the workbench projects the public `service-ca.crt` and that the Service hostname matches its certificate. Keep verification enabled. |
+| Registry timeout | Check workbench readiness and network access to the registry Service on port 443. The verified pod received the ingress label automatically. |
+| Connection or path differs | Compare the asset detail page with Step 2. The notebook intentionally rejects a different resource. |
+| S3 HTTP 403 or timeout | Check the connection, bucket permissions, and network path. SeaweedFS uses its S3 API on port 8333; its Admin port is not an S3 endpoint. |
+| SHA-256 mismatch | Inspect the current object before replacing the fixture. Reupload only when this test key is yours. |
+| API create returns a conflict | The notebook checks the existing resource's marker and fields, then stops if they differ. Choose new example names rather than overwriting another entry. |
 
-This exercise does not delete assets, connections, bucket objects, workbench
-storage, or project resources. Continue to [Step 4](../04-share-registry-access/README.md)
-for the current sharing guidance.
+Continue to [Step 4](../04-share-registry-access/README.md) for user and
+group sharing guidance.
