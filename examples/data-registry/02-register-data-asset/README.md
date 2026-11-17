@@ -238,6 +238,12 @@ additional access boundary inside the project.
 
 ## 5. Register the document as an asset
 
+Before opening the form, make sure the project has the example labels
+`customer-support`, `synthetic`, and `faq`. In **AI hub → Data**, open the
+**Actions** menu and select **Manage labels**. For each label that is missing,
+select **Create label**, enter its name, and confirm. Labels are project-scoped;
+you can reuse labels that are already listed.
+
 Select **Register data** in **AI hub → Data**. Fill in the form using the values
 below. The form has sections for identity, format, organization, location, and
 additional properties. Select the connection you just created; this records a
