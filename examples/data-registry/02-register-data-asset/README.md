@@ -166,13 +166,54 @@ identify the storage provider. The `.svc` endpoint is for workloads inside
 the cluster. The workstation uses a port-forward only for the SeaweedFS upload.
 
 After saving, check that `data-registry-storage` appears on the project's
-**Connections** tab. The connection contains configuration and credentials; it
-does not itself create a Data Registry asset or grant every project member S3
-access.
+**Connections** tab. Optionally, choose **Verify connection** from its action
+menu to have the dashboard test S3 access. The connection contains
+configuration and credentials; it does not itself create a Data Registry
+asset or grant every project member S3 access. If verification times out for
+the default SeaweedFS endpoint, see the next section.
 
 ![S3 connection listed in the Data Registry example project](images/data-registry-connection.png)
 
 *The `data-registry-storage` connection is listed in the project. This example view shows its status as Unverified.*
+
+### Optional: verify an in-cluster SeaweedFS connection
+
+The dashboard's **Verify connection** action sends a request to the Core BFF,
+which checks the S3 endpoint from a dashboard pod. A workstation port-forward
+test does not check this network path. This SeaweedFS-specific policy is
+needed only when all of the following apply:
+
+- You use the in-cluster SeaweedFS endpoint
+  `http://seaweedfs.data-registry-storage.svc:8333`.
+- You want to use the optional **Verify connection** action.
+- The dashboard's existing egress policies block TCP port `8333` (the action
+  may report a 10-second timeout).
+
+It is not needed for an external S3 endpoint, when verification already
+succeeds, or when you skip the optional check. If needed, ask a cluster
+administrator to apply the narrowly scoped
+[dashboard egress policy](../supplementary/dashboard-seaweedfs-egress.yaml).
+Its egress rule permits dashboard pods to reach only SeaweedFS pods in
+`data-registry-storage` on TCP port `8333`; it does not change the
+operator-managed dashboard policy. The manifest assumes the default RHOAI and
+SeaweedFS namespaces and labels. Adjust its `metadata.namespace` and selectors
+if your installation uses different values.
+
+Apply the policy from this directory, then retry **Verify connection**:
+
+```bash
+oc apply -f ../supplementary/dashboard-seaweedfs-egress.yaml
+```
+
+After verification, remove the allowance if you do not expect to use this check
+again:
+
+```bash
+oc delete -f ../supplementary/dashboard-seaweedfs-egress.yaml
+```
+
+The policy is for the dashboard verification request only. A workbench that
+reads S3 objects needs its own permitted network path.
 
 ## 4. Create a collection
 
