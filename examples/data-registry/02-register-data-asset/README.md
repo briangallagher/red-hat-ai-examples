@@ -215,10 +215,22 @@ oc delete -f ../supplementary/dashboard-seaweedfs-egress.yaml
 The policy is for the dashboard verification request only. A workbench that
 reads S3 objects needs its own permitted network path.
 
+During cluster validation on 17 November 2026, the same saved connection first
+reported a verification failure and then verified on a retry about 20 minutes
+later, with no connection or policy changes. Core BFF logs recorded the
+successful retry but no corresponding failed probe; SeaweedFS logs had no
+request-level failure details. An unauthenticated request from Core BFF reached
+SeaweedFS and received HTTP 403, which confirms network reachability but does
+not verify the signed S3 request. The cause of that one-off failure remains
+unknown, so it is not evidence that applying the policy fixed the retry.
+
 ## 4. Create a collection
 
 Open **AI hub → Data** and select `data-registry-example` in the project
-selector. Select **Manage collections**, then **Create collection**. Enter:
+selector. In a new project with no assets, select **Register data**, then
+**Manage collections**. If the **Actions → Manage collections** shortcut is
+already available, you can use it instead. Select **Create collection** and
+enter:
 
 | Collection field | Example value | Why |
 | --- | --- | --- |
@@ -239,10 +251,11 @@ additional access boundary inside the project.
 ## 5. Register the document as an asset
 
 Before opening the form, make sure the project has the example labels
-`customer-support`, `synthetic`, and `faq`. In **AI hub → Data**, open the
-**Actions** menu and select **Manage labels**. For each label that is missing,
-select **Create label**, enter its name, and confirm. Labels are project-scoped;
-you can reuse labels that are already listed.
+`customer-support`, `synthetic`, and `faq`. In a new project with no assets,
+select **Register data**, then **Manage labels**. If the **Actions → Manage
+labels** shortcut is already available, you can use it instead. For each label
+that is missing, select **Create label**, enter its name, and confirm. Labels
+are project-scoped; you can reuse labels that are already listed.
 
 Select **Register data** in **AI hub → Data**. Fill in the form using the values
 below. The form has sections for identity, format, organization, location, and
