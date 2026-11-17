@@ -26,35 +26,34 @@ The object `examples/customer-support/customer-support-faq.md` must already be
 in the bucket named by the asset and connection. Use your Step 2 project name
 in the notebook if you created these resources in another project.
 
-You need a user token authorized to read and create Data Registry catalog
-entries in that project. Leave `USER_TOKEN` empty and enter your token at the
-notebook's hidden prompt. The workbench's ServiceAccount is not used to
-authenticate the registry requests. Do not paste a token into a notebook
-cell: JupyterLab can autosave it to disk.
+### Who can run this step
 
-Your user needs project access to create or open the workbench, attach the
-connection, and read and create Data Registry entries. On this cluster, the
-OpenShift `admin` role bound in the Step 2 project includes the required
-registry operations and `connections use`. The attached S3 credentials must
-also allow listing and reading the fixture object. A narrower registry role
-can be used if it grants the same API operations and `connections use` in the
-project; [Step 4](../04-share-registry-access/README.md) covers role
-assignments.
+Use **your own OpenShift user account with the project `admin` role** in the
+same project where you completed Step 2. **Cluster-admin access is not
+required for Step 3.** If you do not already have project `admin`, ask your
+platform administrator to grant access before starting the workbench.
 
-> **Verification scope:** The first run used a **cluster-admin user's token**.
-> For the decisive permissions check, non-cluster-admin `endUser1` was bound to
-> project `admin` in the Step 2 scratch project. That user created a new
-> workbench in the dashboard, attached the existing connection, and uploaded
-> the notebook. With only `PROJECT` changed to the scratch namespace, all ten
-> code cells passed in that new workbench using the user's token, including
-> API reads, the S3 checksum, and safe reuse of existing API entries. A
-> separate run in the original workbench created fresh metadata with the same
-> user's token and verified every field on read-back. The token was passed
-> privately to a separate kernel for the full runs; the notebook's masked
-> interactive prompt was checked separately with non-secret input. Registry
-> requests did not use the workbench ServiceAccount. Project `admin` plus
-> ordinary authenticated access was sufficient on the verified cluster;
-> permissions may differ on another installation.
+On the verified cluster, project `admin` let this user create a workbench,
+attach the existing connection, read and create Data Registry collections and
+assets, and `use` the connection. The attached S3 credentials must separately
+allow listing and reading the FAQ object. A narrower role can work if it
+grants all of those capabilities; a Data Registry role alone might not allow
+workbench creation or connection attachment. See
+[Step 4](../04-share-registry-access/README.md) for role assignments.
+
+Use a **current token from that same user account** at the notebook's hidden
+prompt. Leave `USER_TOKEN` empty. Do not use a cluster-admin token or the
+workbench ServiceAccount token, and do not paste a token into a notebook cell:
+JupyterLab can autosave cell contents to disk.
+
+> **Verification scope:** The first run used a cluster-admin user's token.
+> A second user, `endUser1`, had project `admin` but no cluster-admin access.
+> That user created a new workbench, attached the connection, and passed all
+> ten notebook code cells with their own token. A separate run with the same
+> user created fresh metadata and verified every field on read-back. The full
+> runs passed the token privately to a separate kernel; the notebook's masked
+> prompt was tested separately with non-secret input. This verifies project
+> `admin` on this cluster; permissions can differ elsewhere.
 
 ## 2. Create the workbench and attach the connection
 
