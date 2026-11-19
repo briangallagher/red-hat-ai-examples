@@ -1,7 +1,7 @@
 # Optional prerequisite: Create sample users and roles
 
 This guide sets up three separate accounts for the Data Registry walkthrough:
-an **RHOAI admin** for Step 1, an **RHOAI user** with project `admin` for
+an **RHOAI admin** for Step 1, an **RHOAI user** who creates the project for
 Steps 2–3, and a second **RHOAI user** to receive access in Step 4. The
 cluster-admin account used for setup is an existing account, not one of the
 three sample users.
@@ -24,7 +24,7 @@ guide does not create or replace those groups.
 | --- | --- | --- | --- |
 | Existing cluster admin | Automatically an RHOAI administrator | `cluster-admin` | Full cluster scope; provisions identities and grants required RBAC. |
 | `rhoai-admin` | Red Hat OpenShift AI administrator groups | `rhods-admins` | Step 1; also needs scoped OpenShift RBAC for its resource changes. |
-| `rhoai-user-data-curator` | Red Hat OpenShift AI user groups | `system:authenticated` | Project `admin` in `data-registry-example`; Steps 2–3 and grants access in Step 4. |
+| `rhoai-user-data-curator` | Red Hat OpenShift AI user groups | `system:authenticated` | Creates `data-registry-example` in Step 2 and is its project requester; Steps 2–3 and grants access in Step 4. |
 | `rhoai-user-recipient` | Red Hat OpenShift AI user groups | `system:authenticated` | No project role initially. Step 4 grants project `view` for Option 1 or a Data Registry role for Option 2. |
 
 The **Red Hat OpenShift AI administrator groups** setting uses the existing
@@ -39,10 +39,13 @@ the member a cluster administrator. Step 1 also edits the `DataScienceCluster`
 and dashboard configuration and creates supporting resources. A cluster admin
 must grant `rhoai-admin` approved, scoped OpenShift RBAC for those actions.
 
-The project `admin` role for `rhoai-user-data-curator` is a namespaced grant. It
-provides the minimum project access used by Steps 2–3 and does not grant
-cluster-wide administration. The second user receives a project role only
-when you perform the sharing step.
+Create `data-registry-example` in Step 2 while signed in as
+`rhoai-user-data-curator`. With the default OpenShift project request template,
+the requester receives project `admin`. If your cluster uses a custom project
+request template, confirm that it grants the requester project `admin`; if
+another account creates the project, the curator needs existing project
+`admin`. The second user receives a project role only when you perform the
+sharing step.
 
 ## Access and hand-offs
 
@@ -56,9 +59,9 @@ flowchart TB
         users["Red Hat OpenShift AI user groups<br/>system:authenticated"]
       end
       rhoaiAdmin["RHOAI admin<br/>rhoai-admin<br/>Step 1 + approved scoped RBAC"]
-      curator["RHOAI user<br/>rhoai-user-data-curator<br/>project admin · Steps 2–3"]
+      curator["RHOAI user<br/>rhoai-user-data-curator<br/>creates project · Steps 2–3"]
       recipient["RHOAI user<br/>rhoai-user-recipient<br/>project view after Step 4"]
-      project["data-registry-example<br/>project-scoped assets"]
+      project["data-registry-example<br/>requester receives project admin"]
       setup["Step 1 resources<br/>DataScienceCluster · dashboard config<br/>registry Secret and FeatureStore"]
     end
 
@@ -66,12 +69,11 @@ flowchart TB
     ca -->|provisions sample accounts| curator
     ca -->|provisions sample accounts| recipient
     ca -->|grants reviewed Step 1 RBAC| rhoaiAdmin
-    ca -->|grants project admin| curator
     admins --> rhoaiAdmin
     users --> curator
     users --> recipient
     rhoaiAdmin -->|configures| setup
-    curator -->|project admin role| project
+    curator -->|creates project request| project
     curator -->|grants view in Step 4 Option 1| recipient
     recipient -->|project view role after sharing| project
   end
@@ -175,38 +177,7 @@ access; it does not grant project roles or the OpenShift permissions needed by
 Step 1. See the RHOAI documentation for [managing users and
 groups](https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/3.5/html/managing_openshift_ai/managing-users-and-groups).
 
-## 3. Assign the project roles
-
-Make sure `data-registry-example` exists. A cluster admin can create it for the
-walkthrough if needed:
-
-```bash
-oc new-project data-registry-example
-```
-
-Grant `rhoai-user-data-curator` project `admin` so they can create the
-connection, collection, and assets in Steps 2–3:
-
-```bash
-oc adm policy add-role-to-user admin rhoai-user-data-curator \
-  -n data-registry-example
-```
-
-Leave `rhoai-user-recipient` without project access until Step 4. To demonstrate
-Option 1 there, sign in as `rhoai-user-data-curator` and grant the recipient
-project `view`:
-
-```bash
-oc adm policy add-role-to-user view rhoai-user-recipient \
-  -n data-registry-example
-```
-
-This gives the recipient project-wide read access, including Data Registry
-assets. For Option 2, use the Data Registry role in the
-[sharing guide](../04-share-registry-access/README.md) and verify the recipient
-can discover the project in the selector before relying on the grant.
-
-## 4. Check Step 1 permissions
+## 3. Check rhoai-admin permissions
 
 RHOAI group membership alone does not authorize the writes in Step 1. Before
 using `rhoai-admin`, have a cluster admin confirm that the account can
@@ -217,20 +188,17 @@ oc auth can-i patch datascienceclusters \
   --as=rhoai-admin
 oc auth can-i patch odhdashboardconfigs \
   -n redhat-ods-applications --as=rhoai-admin
-oc auth can-i create secrets \
-  -n rhoai-data-registry --as=rhoai-admin
-oc auth can-i create featurestores \
-  -n rhoai-data-registry --as=rhoai-admin
 ```
 
 The installed API names and any additional permissions for PostgreSQL or
-storage setup can vary by cluster. This guide checks the main Step 1 actions
-instead of shipping a universal ClusterRole; have the cluster admin grant the
-required permissions through your organization's reviewed RBAC roles. The
-RHOAI admin must not be given `cluster-admin` just to make the RHOAI group
-work.
+storage setup can vary by cluster. This guide checks the main RHOAI
+configuration permissions instead of shipping a universal ClusterRole; have
+the cluster admin grant required permissions through your organization's
+reviewed RBAC roles. Check namespace-scoped create permissions after their
+target namespace exists. The RHOAI admin must not be given `cluster-admin` just
+to make the RHOAI group work.
 
-## 5. Use each account in the walkthrough
+## 4. Use each account in the walkthrough
 
 Use `rhoai-admin` for Step 1, `rhoai-user-data-curator` for Steps 2–3, and
 `rhoai-user-recipient` to verify the sharing result in Step 4. Open a separate

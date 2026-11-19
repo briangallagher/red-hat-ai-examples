@@ -4,14 +4,18 @@
 [Step 3: Use the Data Registry API →](../03-use-registry-api/README.md) ·
 [Guide index](../README.md)
 
-**Minimum persona:** An **RHOAI user** with project `admin` permissions in an
-existing target project. A reachable S3-compatible service must also be
-available. If the project or service is missing, ask an RHOAI admin to
-provision what is needed; you still need project `admin` in the target project.
+**Minimum persona:** An **RHOAI user** who can request a project, or who
+already has project `admin` in the target project. A reachable S3-compatible
+service must also be available.
 
-For the sample-user walkthrough, sign in as `rhoai-user-data-curator`. You can
-use your own RHOAI user account instead if it has project `admin` permissions
-in the target project.
+For the sample-user walkthrough, sign in as `rhoai-user-data-curator`. If you
+need a new project, create it while signed in as this user. The default
+OpenShift project request assigns the requester project `admin`; if your
+cluster uses a custom project request template, confirm that it preserves this
+behavior. If another account creates the project, that account becomes the
+requester, so make sure the curator already has project `admin` in it.
+Alternatively, use your own RHOAI user account if it can request a project or
+already has project `admin` in the target project.
 
 In this walkthrough, you use an RHOAI project, connect it to an S3-compatible
 object store, upload one fictional support document, and register that document
@@ -34,9 +38,8 @@ SeaweedFS values are shown.
   to deploy and verify SeaweedFS, or obtain an existing S3 service and its
   approved credentials. The guide covers the SeaweedFS endpoint, bucket,
   credentials, and test upload.
-- Have project `admin` permissions in the existing target RHOAI project to
-  create its connection, collection, and asset. Project creation is a separate
-  setup task.
+- Have project `admin` permissions to create the connection, collection, and
+  asset. If you need a new project, create it as the signed-in user in section 1.
 - Keep credentials out of Git, screenshots, asset descriptions, and notebook
   outputs. This example's document contains only synthetic information.
 
@@ -56,28 +59,21 @@ The example names below are used throughout Steps 2 and 3:
 | Asset | `customer-support-faq` | Catalog entry for the document prefix. |
 | Asset path | `s3://data-registry-example/examples/customer-support/` | SeaweedFS example path; replace the bucket with yours when using another service. |
 
-## 1. Select the RHOAI project
+## 1. Create or select the RHOAI project
 
-In the RHOAI dashboard, open **Projects** and select the existing
-`data-registry-example` project. Confirm that you have the project `admin` role
-and select the project in the project selector. If it does not exist, ask an
-RHOAI admin to create it and grant you project `admin` permissions. A project
-is the access boundary: people who can view registry resources in it can see
-its collections and assets. The SeaweedFS deployment is in a separate
-namespace, so its service and PVC are not owned by this RHOAI project.
+In the RHOAI dashboard, open **Data Science Projects**. If
+`data-registry-example` does not exist, create it while signed in as
+`rhoai-user-data-curator` (or your own RHOAI user). With the default OpenShift
+project request template, the requesting user receives the project `admin`
+role. If your cluster uses a custom project request template, confirm that it
+grants the requester project `admin`. If another account creates the project,
+make sure the curator already has project `admin` before continuing.
 
-An RHOAI admin with project-creation permission can create the project from the
-CLI when needed:
-
-```bash
-oc new-project data-registry-example \
-  --display-name='Data Registry example'
-oc label namespace data-registry-example opendatahub.io/dashboard=true
-```
-
-If the project already exists, do not recreate it. Check that it appears under
-**Projects** in the dashboard. The label makes a CLI-created namespace
-available as an RHOAI project; it does not grant storage access.
+Select `data-registry-example` and confirm that it appears under **Projects**
+in the dashboard. A project is the access boundary: people who can view
+registry resources in it can see its collections and assets. The SeaweedFS
+deployment is in a separate namespace, so its service and PVC are not owned by
+this RHOAI project.
 
 ![Data Registry example project before storage is added](images/data-registry-project.png)
 
