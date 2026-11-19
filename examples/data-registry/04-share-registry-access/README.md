@@ -53,25 +53,36 @@ oc adm policy add-role-to-group admin example-group -n data-registry-example
 Project roles affect more than Data Registry, so use this option when the
 person needs the corresponding access to the project as a whole.
 
-## Option 2: Share only Data Registry assets
+## Option 2: Share Data Registry access
 
-> **Project visibility:** A Data Registry-only RoleBinding grants access to
-> registry resources, but might not make the project appear in the dashboard
-> selector. The recipient must also be able to discover the project. This guide
-> does not yet define a tested least-privilege project-discovery grant. A
-> namespace-scoped RoleBinding does not grant access to the cluster-scoped
-> Project resource, and a `get`-only rule may not be enough if the selector
-> lists projects. Verify the selector using the recipient's account before
-> treating this option as complete.
+Start with catalog access and project discovery. These grants allow the
+recipient to select the project and use the catalog without granting access
+to its workbenches, pods, or Secret contents. Then decide separately whether
+to enable connection discovery and selection with the optional Secret-list
+grant below.
+
+The catalog and project-discovery behavior in this section was verified on
+RHOAI 3.6 with OpenShift 4.22.23 on 19 November 2026. Check the recipient's
+effective permissions and actual dashboard behavior on your installation.
+
+### 1. Choose the catalog permissions
 
 If a teammate needs the catalog but should not receive broad access to other
 resources in `data-registry-example`, bind one of the operator-provided Data
 Registry ClusterRoles **in that project**:
 
-| Data Registry ClusterRole | Access within `data-registry-example` |
-| --- | --- |
-| `feast-data-registry-viewer` | View collections and assets. |
-| `feast-data-registry-admin` | View, create, update, and delete collections and assets. |
+| Data Registry ClusterRole | Access within `data-registry-example` | Connection access from this role |
+| --- | --- | --- |
+| `feast-data-registry-viewer` | View collections and assets. | Read the connection reference stored on an asset. No Secret read or write grant. |
+| `feast-data-registry-admin` | View, create, update, and delete collections and assets. | Also change or clear an asset's connection reference. No Secret read or write grant. |
+
+A connection reference records the connection type and identifier. For this
+walkthrough, it identifies the Secret named `data-registry-storage`. Reading
+that reference does not return the connection's credentials. Changing an asset's
+reference does not edit the connection's endpoint, bucket, or credentials.
+Neither registry role grants permission to change the underlying connection
+Secret. The admin role's `use` permission on the virtual registry
+`connections` resource does not grant Kubernetes Secret access.
 
 For an RHOAI user, select the level of access and run **one** command:
 
@@ -109,29 +120,139 @@ They do not select individual collections or assets. OpenShift permissions are
 additive: a Data Registry RoleBinding cannot remove access that the RHOAI user
 already has through a project role or another binding.
 
+### 2. Allow the project to appear in the selector
+
+On the tested installation, the registry role alone allowed direct catalog
+requests but left the Data Registry project dropdown empty. Add the
+[project-discovery Role](rbac/project-discovery-role.yaml), which grants only
+`get` on the named namespace's metadata, and bind it to the recipient:
+
+Run the manifest commands from this guide's `04-share-registry-access/`
+directory in your checkout.
+
+```bash
+oc apply -f rbac/project-discovery-role.yaml
+
+oc create rolebinding data-registry-project-discovery-recipient \
+  --role=data-registry-project-discovery \
+  --user=rhoai-user-recipient -n data-registry-example \
+  --dry-run=client -o yaml | oc apply -f -
+```
+
+For a group, use a distinct binding name and replace
+`--user=rhoai-user-recipient` with `--group=example-group`.
+
+This namespace-scoped Role works with OpenShift's project-visibility check,
+which evaluates `get namespaces` within the named namespace. It does not
+grant cluster-wide namespace listing or access to resources inside the
+project. If using another project, update both `metadata.namespace` and
+`rules[].resourceNames` in the manifest, and the command's namespace.
+See the [OpenShift project-visibility implementation](https://github.com/openshift/openshift-apiserver/blob/release-4.22/pkg/project/auth/reviewer.go).
+
+### 3. Optional: view connections and select one for an asset
+
+Use this additional grant only when the recipient should discover the
+project's Secret-backed connections. A registry viewer can then see the
+available connections; a registry admin can select a different connection
+when registering or editing an asset. The additional Role grants no
+permission to edit the underlying connection Secret.
+
+Without this grant, catalog reads and the stored connection reference remain
+available. On the tested installation, the connection-list API returned
+`403`, the dashboard showed **Unable to load connections** and **Connection
+unavailable**, and the connection selector was disabled. A registry admin
+could still set a known connection reference through the catalog API.
+
+> **Security decision — permission to read project Secret contents:** The
+> current Secret-backed connection lookup lists Kubernetes Secrets using the
+> caller's token. Granting `list secrets` allows the recipient to read the
+> complete contents of **all Secrets in this project**, including credentials
+> and Secrets unrelated to connections. It is not limited to names or
+> dashboard-filtered connections. An individual `get secret` can remain
+> forbidden while a list response still exposes the values. Grant this only
+> if that credential-read access is acceptable for the recipient.
+
+Kubernetes documents that Secret list responses include Secret contents in
+[Authorization](https://kubernetes.io/docs/reference/access-authn-authz/authorization/).
+Credentials read from a Secret may authorize access to the underlying data
+source, independently of the user's catalog permissions.
+
+If you accept that scope, apply the
+[Secret-list Role](rbac/connection-secret-list-role.yaml) and bind it to the
+recipient. These commands grant only `list`; they do not add `get`, `watch`,
+`create`, `patch`, `update`, or `delete` on Secrets:
+
+```bash
+oc apply -f rbac/connection-secret-list-role.yaml
+
+oc create rolebinding data-registry-connection-secret-list-recipient \
+  --role=data-registry-connection-secret-list \
+  --user=rhoai-user-recipient -n data-registry-example \
+  --dry-run=client -o yaml | oc apply -f -
+```
+
+For a group, use a distinct binding name and replace the `--user` option with
+`--group=example-group`. These are additional permissions alongside the chosen
+registry role and project-discovery binding. With this optional grant, access
+includes project credential reads as well as catalog access.
+
+To revoke only this example user's optional Secret-list grant:
+
+```bash
+oc delete rolebinding data-registry-connection-secret-list-recipient \
+  -n data-registry-example
+```
+
+The registry and project-discovery bindings remain in place. Review other
+bindings too: removing this binding does not remove permissions granted
+elsewhere.
+
 ## Verify the result
 
-A RHOAI user with project `admin` permissions can inspect the recipient's
-effective rules:
+Use a separate CLI session authenticated as the **recipient** to inspect its
+own effective rules. Project `admin` does not itself grant permission to
+impersonate another user with `--as`.
 
 ```bash
-oc auth can-i --list -n data-registry-example --as=rhoai-user-recipient
+oc whoami
+oc get projects
+oc auth can-i --list -n data-registry-example
 ```
 
-Look for the `dataregistry.opendatahub.io` rules. Then make an actual Data
-Registry request as that user, for example by opening **AI hub → Data** if the
-project appears in its selector. For registry-only access, check a separate
-project resource too:
+Confirm the expected username and project visibility, then look for the
+`dataregistry.opendatahub.io` rules. In the recipient's dashboard session,
+open **AI hub → Data**, select the project, and open a collection and asset.
+Verify that a viewer's catalog writes return `403` and that a registry admin
+can create, update, and remove a disposable catalog entry.
+
+For Option 2, also check the boundaries without displaying Secret values:
 
 ```bash
-oc auth can-i --as=rhoai-user-recipient get pods -n data-registry-example
+oc auth can-i get pods -n data-registry-example
+oc auth can-i get notebooks.kubeflow.org -n data-registry-example
+oc auth can-i list secrets -n data-registry-example
+oc auth can-i get secrets -n data-registry-example
+oc auth can-i patch secrets -n data-registry-example
 ```
 
-That command should return `no` if the RHOAI user has no other grant to pods in
-the project. Some `oc` versions cannot check Data Registry's virtual resources
-directly with `oc auth can-i`; the effective rule list and an actual Data
-Registry request are more reliable checks.
+With no other grants, pod, workbench, individual Secret reads, and Secret
+patch checks should return `no`. Secret listing should return `no` for the
+catalog-only setup and `yes` only if you chose the optional credential-read
+grant. A `no` result for `get secrets` does **not** establish confidentiality
+when `list secrets` is allowed.
 
-These grants control catalog access. Access to the underlying S3 objects or
-other data sources depends on their own credentials and policies. Review those
-separately when sharing an asset or its project.
+Some `oc` versions cannot check Data Registry's virtual resources directly
+with `oc auth can-i`; the effective rule list and an actual Data Registry
+request are more reliable checks. Authorization caches can delay the effect
+of grants and revocations, so recheck actual requests after permissions have
+propagated.
+
+On the tested dashboard, viewers still saw write controls even though the
+API rejected their writes. Changing a connection reference through the API
+also accepted a nonexistent connection name: a successful catalog save does
+not verify connection existence, credentials, or connectivity.
+
+The registry roles control catalog access. Access to the underlying S3 objects or
+other data sources depends on their own credentials and policies. The
+optional Secret-list grant can expose those credentials; review that
+additional access explicitly when sharing an asset or its project.
