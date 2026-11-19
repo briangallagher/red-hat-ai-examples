@@ -21,6 +21,23 @@ imply project `admin`. Step 4 is optional.
 > [SeaweedFS evaluation setup](supplementary/s3-compatible-storage.md) for the
 > sample object, or use an existing approved S3-compatible service.
 
+> **Optional prerequisite — demo PostgreSQL:** The Data Registry needs a
+> reachable PostgreSQL database for its metadata. Reuse an existing approved
+> database, or follow the [supplementary demo PostgreSQL
+> setup](supplementary/postgresql-demo.md) to deploy one in a separate
+> project. The demo database is optional; a metadata database is required to
+> run the example.
+
+> **Setup permissions:** Some setup actions require a cluster admin or a user
+> with specifically delegated permissions. The optional sample-user guide's
+> HTPasswd and group changes require a cluster admin; for other identity
+> providers, use the organization's identity-provider administrator. Step 1
+> also needs OpenShift permissions beyond membership in `rhods-admins`. In
+> particular, a cluster admin or delegated user must create the registry
+> connection Secret in the RHOAI-managed `rhoai-data-registry` namespace.
+> Step 1 creates that namespace after enabling the Data Registry component.
+> The demo PostgreSQL guide explains when to create the Secret.
+
 > **Technology Preview:** Technology Preview features are not supported with
 > Red Hat production service-level agreements (SLAs), might not be functionally
 > complete, and are not recommended for production.

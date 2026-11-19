@@ -35,7 +35,8 @@ oc new-project "$POSTGRES_NAMESPACE"
 Generate a demo password and store the database settings in a Secret. The
 password uses hexadecimal characters, which are safe in the registry's
 PostgreSQL connection URI. Keep the shell variable until you create the
-Data Registry Secret in the next section; the commands do not print it.
+Data Registry connection Secret after enabling the component in Step 1; the
+commands do not print it.
 
 ```bash
 POSTGRESQL_PASSWORD="$(openssl rand -hex 24)"
@@ -70,10 +71,14 @@ internal service address is
 
 ## Configure the Data Registry connection
 
-Create the Secret that the Data Registry reads in its own namespace. This
-stores the endpoint, database credentials, and Feast SQL configuration needed
-by [Step 1](../01-configure-data-registry/README.md). The password is not
-written to a local file or displayed by the command:
+After enabling the Data Registry component in
+[Step 1](../01-configure-data-registry/README.md), wait for the
+`rhoai-data-registry` namespace to be created. Then create the Secret that the
+Data Registry reads in that namespace. A cluster admin or a user delegated
+permission to create Secrets there must run this command; membership in
+`rhods-admins` alone does not grant that OpenShift permission. The Secret
+stores the endpoint, database credentials, and Feast SQL configuration. The
+password is not written to a local file or displayed by the command:
 
 ```bash
 oc create -f - <<EOF
@@ -97,13 +102,13 @@ EOF
 unset POSTGRESQL_PASSWORD
 ```
 
-These commands create Secrets and fail if either Secret already exists. Run
+The commands create Secrets and fail if either Secret already exists. Run
 them once. If either Secret already exists, stop and use the matching database
 credentials; generating a new password would leave the database and registry
-with different credentials. Apply the
-[FeatureStore manifest from Step 1](../01-configure-data-registry/feature-store.yaml)
-after the database and Secret are ready. The PostgreSQL service has no public
-Route; the registry must be able to reach the service over the cluster network.
+with different credentials. Create the connection Secret only after Step 1
+has created the `rhoai-data-registry` namespace, then return to Step 1 and
+apply the FeatureStore manifest. The PostgreSQL service has no public Route;
+the registry must be able to reach the service over the cluster network.
 
 If the Deployment does not become ready, inspect its events and logs:
 

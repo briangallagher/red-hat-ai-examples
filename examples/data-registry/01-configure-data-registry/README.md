@@ -1,13 +1,13 @@
 # Step 1: Configure the Data Registry in RHOAI 3.6
 
-This step is for an **RHOAI admin** with the cluster-level permissions needed
-to configure RHOAI components and their supporting resources. If you followed
-the optional sample-user guide, use `rhoai-admin`; otherwise, use your own
-RHOAI admin account with these permissions. Enable the Data Registry component,
-configure its metadata database, deploy an instance, and confirm the dashboard
-is available. Then use `rhoai-user-data-curator`, or your own RHOAI user with
-project `admin` permissions, for [Step 2](../02-register-data-asset/README.md).
-For a separate-account walkthrough, see the optional
+This step uses an **RHOAI admin** account with permission to configure RHOAI
+components. If you followed the optional sample-user guide, use
+`rhoai-admin`; otherwise, use your own RHOAI admin account. A cluster admin or
+a user with delegated permissions must also create the registry connection
+Secret in the RHOAI-managed namespace after it is created. Then use
+`rhoai-user-data-curator`, or your own RHOAI user with project `admin`
+permissions, for [Step 2](../02-register-data-asset/README.md). For a
+separate-account walkthrough, see the optional
 [sample users and roles guide](../supplementary/users-and-roles.md).
 
 > **Technology Preview:** Technology Preview features are not supported with Red Hat production service-level agreements (SLAs), might not be functionally complete, and are not recommended for production. See the Red Hat support scope for Technology Preview features before using this example.
@@ -37,7 +37,9 @@ You need:
 - the `oc` command-line interface logged in to the cluster;
 - an RHOAI admin account with permission to manage the DataScienceCluster,
   dashboard configuration, and supporting resources for this Technology Preview;
-- a reachable PostgreSQL database for registry metadata; and
+- a reachable PostgreSQL database for registry metadata, using an existing
+  service or following the optional [demo PostgreSQL
+  setup](../supplementary/postgresql-demo.md) linked from the landing page; and
 
 After this setup, an RHOAI user with project `admin` permissions can follow
 Steps 2 and 3 and, if needed, optional Step 4 without cluster-wide admin access.
@@ -113,35 +115,39 @@ oc wait --for=jsonpath='{.status.phase}'=Ready datasciencecluster/default-dsc --
 oc get namespace rhoai-data-registry
 ```
 
-### Configure the metadata database
-
-The registry requires PostgreSQL for its own metadata. Use an existing
-reachable PostgreSQL service, or follow the
-[supplementary demo PostgreSQL setup](../supplementary/postgresql-demo.md) to
-create a single-instance database for evaluation. The demo setup is not
-production ready. The registry can use the same PostgreSQL service as a Feast
-Feature Store, but use a dedicated database and database user when possible.
-This gives you clearer ownership, backup, lifecycle, and access boundaries
-even when both databases share a PostgreSQL server.
-
-For an existing PostgreSQL service, copy
-[database-secret.example.yaml](database-secret.example.yaml), replace every
-`CHANGE_ME` value, then apply it:
-
-```bash
-oc apply -f database-secret.example.yaml
-```
-
-If you use the supplementary demo database, its guide creates this same
-Secret for you; skip the command above.
-
-The Secret must be in the `rhoai-data-registry` namespace because the Data Registry workload reads it there. If the password contains reserved URI characters, URL-encode it before using it in the DSN. Never commit a Secret containing real credentials.
-
 ### Create the registry instance
 
 > **Required namespace:** The `FeatureStore` must use
 > `metadata.namespace: rhoai-data-registry`. This is the service namespace,
 > separate from the RHOAI project where you catalog assets.
+
+Before creating the instance, make sure a reachable PostgreSQL metadata
+database exists. Use an existing service or follow the
+[supplementary demo PostgreSQL setup](../supplementary/postgresql-demo.md).
+The demo deployment is for evaluation only, not production. If you share a
+PostgreSQL server with a Feast Feature Store, use a separate database and user
+for the Data Registry when possible.
+
+The `FeatureStore` reads its connection settings from the
+`data-registry-database` Secret in `rhoai-data-registry`. Secrets are
+namespace-scoped, so a copy in the PostgreSQL project's namespace cannot be
+used by the registry. The `rhoai-data-registry` namespace is created after
+you enable the Data Registry component above. Once it exists, have a cluster
+admin create the connection Secret, or ask them to grant the responsible user
+scoped permission to create Secrets in this namespace:
+
+- For the demo database, follow the [connection Secret instructions in the
+  supplementary guide](../supplementary/postgresql-demo.md#configure-the-data-registry-connection).
+- For an existing database, copy
+  [database-secret.example.yaml](database-secret.example.yaml), replace every
+  `CHANGE_ME` value, and have that authorized user apply it:
+
+  ```bash
+  oc apply -f database-secret.example.yaml
+  ```
+
+Never commit a Secret containing real credentials. If the password contains
+reserved URI characters, URL-encode it before using it in the DSN.
 
 Review [feature-store.yaml](feature-store.yaml), then create the instance:
 
