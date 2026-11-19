@@ -31,7 +31,7 @@ in the notebook if you created these resources in another project.
 
 ### Minimum access
 
-For the sample-user walkthrough, use `rhoai-user-builder` with the project
+For the sample-user walkthrough, use `rhoai-user-data-curator` with the project
 `admin` role in the same project where you completed Step 2. You can use your
 own RHOAI user account instead if it has that role. **Cluster-admin access is
 not required for Step 3.** If you do not already have project `admin`, ask an
@@ -59,7 +59,7 @@ JupyterLab can autosave cell contents to disk.
 > metadata and verified every field on read-back. The full runs passed the
 > token privately to a separate kernel; the notebook's masked prompt was
 > tested separately with non-secret input. For the sample-user walkthrough,
-> use `rhoai-user-builder`. This verifies project `admin` on this cluster;
+> use `rhoai-user-data-curator`. This verifies project `admin` on this cluster;
 > permissions can differ elsewhere.
 
 ## 2. Create the workbench and attach the connection

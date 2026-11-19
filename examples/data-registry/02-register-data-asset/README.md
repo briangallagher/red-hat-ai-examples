@@ -9,9 +9,9 @@ existing target project. A reachable S3-compatible service must also be
 available. If the project or service is missing, ask an RHOAI admin to
 provision what is needed; you still need project `admin` in the target project.
 
-For the sample-user walkthrough, sign in as `rhoai-user-builder`. You can use
-your own RHOAI user account instead if it has project `admin` permissions in
-the target project.
+For the sample-user walkthrough, sign in as `rhoai-user-data-curator`. You can
+use your own RHOAI user account instead if it has project `admin` permissions
+in the target project.
 
 In this walkthrough, you use an RHOAI project, connect it to an S3-compatible
 object store, upload one fictional support document, and register that document

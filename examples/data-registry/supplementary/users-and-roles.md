@@ -16,12 +16,12 @@ guide does not create or replace those groups.
 | Account | RHOAI User Management setting | OpenShift group or role | Walkthrough access |
 | --- | --- | --- | --- |
 | Existing cluster admin | Automatically an RHOAI administrator | `cluster-admin` | Full cluster scope; provisions identities and grants required RBAC. |
-| `rhoai-admin-dave` | Red Hat OpenShift AI administrator groups | `rhods-admins` | Step 1; also needs scoped OpenShift RBAC for its resource changes. |
-| `rhoai-user-builder` | Red Hat OpenShift AI user groups | `system:authenticated` | Project `admin` in `data-registry-example`; Steps 2–3 and grants access in Step 4. |
+| `rhoai-admin` | Red Hat OpenShift AI administrator groups | `rhods-admins` | Step 1; also needs scoped OpenShift RBAC for its resource changes. |
+| `rhoai-user-data-curator` | Red Hat OpenShift AI user groups | `system:authenticated` | Project `admin` in `data-registry-example`; Steps 2–3 and grants access in Step 4. |
 | `rhoai-user-recipient` | Red Hat OpenShift AI user groups | `system:authenticated` | No project role initially. Step 4 grants project `view` for Option 1 or a Data Registry role for Option 2. |
 
 The **Red Hat OpenShift AI administrator groups** setting uses the existing
-`rhods-admins` group. Add `rhoai-admin-dave` to that group; cluster admins are
+`rhods-admins` group. Add `rhoai-admin` to that group; cluster admins are
 already assigned RHOAI administrator access automatically. The **Red Hat
 OpenShift AI user groups** setting uses `system:authenticated`, which includes
 all authenticated users, so the two RHOAI users need no group-membership change.
@@ -30,9 +30,9 @@ RHOAI group membership and project permissions are separate. Membership in
 `rhods-admins` grants RHOAI dashboard administrator functions; it does not make
 the member a cluster administrator. Step 1 also edits the `DataScienceCluster`
 and dashboard configuration and creates supporting resources. A cluster admin
-must grant `rhoai-admin-dave` approved, scoped OpenShift RBAC for those actions.
+must grant `rhoai-admin` approved, scoped OpenShift RBAC for those actions.
 
-The project `admin` role for `rhoai-user-builder` is a namespaced grant. It
+The project `admin` role for `rhoai-user-data-curator` is a namespaced grant. It
 provides the minimum project access used by Steps 2–3 and does not grant
 cluster-wide administration. The second user receives a project role only
 when you perform the sharing step.
@@ -48,24 +48,24 @@ flowchart TB
         admins["Red Hat OpenShift AI administrator groups<br/>rhods-admins"]
         users["Red Hat OpenShift AI user groups<br/>system:authenticated"]
       end
-      rhoaiAdmin["RHOAI admin<br/>rhoai-admin-dave<br/>Step 1 + approved scoped RBAC"]
-      builder["RHOAI user<br/>rhoai-user-builder<br/>project admin · Steps 2–3"]
+      rhoaiAdmin["RHOAI admin<br/>rhoai-admin<br/>Step 1 + approved scoped RBAC"]
+      curator["RHOAI user<br/>rhoai-user-data-curator<br/>project admin · Steps 2–3"]
       recipient["RHOAI user<br/>rhoai-user-recipient<br/>project view after Step 4"]
       project["data-registry-example<br/>project-scoped assets"]
       setup["Step 1 resources<br/>DataScienceCluster · dashboard config<br/>registry Secret and FeatureStore"]
     end
 
-    ca -->|adds rhoai-admin-dave to existing group| admins
-    ca -->|provisions sample accounts| builder
+    ca -->|adds rhoai-admin to existing group| admins
+    ca -->|provisions sample accounts| curator
     ca -->|provisions sample accounts| recipient
     ca -->|grants reviewed Step 1 RBAC| rhoaiAdmin
-    ca -->|grants project admin| builder
+    ca -->|grants project admin| curator
     admins --> rhoaiAdmin
-    users --> builder
+    users --> curator
     users --> recipient
     rhoaiAdmin -->|configures| setup
-    builder -->|project admin role| project
-    builder -->|grants view in Step 4 Option 1| recipient
+    curator -->|project admin role| project
+    curator -->|grants view in Step 4 Option 1| recipient
     recipient -->|project view role after sharing| project
   end
 
@@ -74,7 +74,7 @@ flowchart TB
   classDef rhoaiUserStyle fill:#e8f5e9,stroke:#347a3d,stroke-width:2px
   class ca clusterAdmin
   class rhoaiAdmin rhoaiAdminStyle
-  class builder,recipient rhoaiUserStyle
+  class curator,recipient rhoaiUserStyle
 ```
 
 The arrows show this guide's suggested hand-offs. An RHOAI admin may also
@@ -111,8 +111,8 @@ oc get secret "$HTPASS_SECRET" -n openshift-config \
 chmod 600 users.htpasswd
 
 # Each command prompts for the password; it is not placed in shell history.
-htpasswd -B users.htpasswd rhoai-admin-dave
-htpasswd -B users.htpasswd rhoai-user-builder
+htpasswd -B users.htpasswd rhoai-admin
+htpasswd -B users.htpasswd rhoai-user-data-curator
 htpasswd -B users.htpasswd rhoai-user-recipient
 
 # Replace the same HTPasswd secret referenced by OAuth.
@@ -133,11 +133,11 @@ After the identity provider accepts the accounts, log in once as each user so
 OpenShift creates or maps the corresponding user identities:
 
 ```bash
-oc login -u rhoai-admin-dave
+oc login -u rhoai-admin
 oc whoami
 ```
 
-Repeat with `rhoai-user-builder` and `rhoai-user-recipient`.
+Repeat with `rhoai-user-data-curator` and `rhoai-user-recipient`.
 
 ## 2. Use the groups already configured for RHOAI
 
@@ -146,12 +146,12 @@ OpenShift AI administrator groups** and the built-in `system:authenticated`
 group for **Red Hat OpenShift AI user groups**. Do not create custom groups or
 change these settings for this walkthrough.
 
-After the sample identities have been created and `rhoai-admin-dave` has
+After the sample identities have been created and `rhoai-admin` has
 logged in, add only that user to the existing administrator group:
 
 ```bash
 oc get group rhods-admins
-oc adm groups add-users rhods-admins rhoai-admin-dave
+oc adm groups add-users rhods-admins rhoai-admin
 oc get group rhods-admins -o yaml
 ```
 
@@ -177,17 +177,17 @@ walkthrough if needed:
 oc new-project data-registry-example
 ```
 
-Grant the builder project `admin` so they can create the connection,
-collection, and assets in Steps 2–3:
+Grant `rhoai-user-data-curator` project `admin` so they can create the
+connection, collection, and assets in Steps 2–3:
 
 ```bash
-oc adm policy add-role-to-user admin rhoai-user-builder \
+oc adm policy add-role-to-user admin rhoai-user-data-curator \
   -n data-registry-example
 ```
 
 Leave `rhoai-user-recipient` without project access until Step 4. To demonstrate
-Option 1 there, sign in as `rhoai-user-builder` and grant the recipient project
-`view`:
+Option 1 there, sign in as `rhoai-user-data-curator` and grant the recipient
+project `view`:
 
 ```bash
 oc adm policy add-role-to-user view rhoai-user-recipient \
@@ -202,18 +202,18 @@ can discover the project in the selector before relying on the grant.
 ## 4. Check Step 1 permissions
 
 RHOAI group membership alone does not authorize the writes in Step 1. Before
-using `rhoai-admin-dave`, have a cluster admin confirm that the account can
+using `rhoai-admin`, have a cluster admin confirm that the account can
 perform the specific operations required by the installed RHOAI resources:
 
 ```bash
 oc auth can-i patch datascienceclusters \
-  --as=rhoai-admin-dave
+  --as=rhoai-admin
 oc auth can-i patch odhdashboardconfigs \
-  -n redhat-ods-applications --as=rhoai-admin-dave
+  -n redhat-ods-applications --as=rhoai-admin
 oc auth can-i create secrets \
-  -n rhoai-data-registry --as=rhoai-admin-dave
+  -n rhoai-data-registry --as=rhoai-admin
 oc auth can-i create featurestores \
-  -n rhoai-data-registry --as=rhoai-admin-dave
+  -n rhoai-data-registry --as=rhoai-admin
 ```
 
 The installed API names and any additional permissions for PostgreSQL or
@@ -225,6 +225,6 @@ work.
 
 ## 5. Use each account in the walkthrough
 
-Use `rhoai-admin-dave` for Step 1, `rhoai-user-builder` for Steps 2–3, and
+Use `rhoai-admin` for Step 1, `rhoai-user-data-curator` for Steps 2–3, and
 `rhoai-user-recipient` to verify the sharing result in Step 4. Open a separate
 browser session for each account if you need to compare what they can see.

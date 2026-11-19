@@ -2,11 +2,11 @@
 
 This step is for an **RHOAI admin** with the cluster-level permissions needed
 to configure RHOAI components and their supporting resources. If you followed
-the optional sample-user guide, use `rhoai-admin-dave`; otherwise, use your own
+the optional sample-user guide, use `rhoai-admin`; otherwise, use your own
 RHOAI admin account with these permissions. Enable the Data Registry component,
 configure its metadata database, deploy an instance, and confirm the dashboard
-is available. Then use `rhoai-user-builder`, or your own RHOAI user with project
-`admin` permissions, for [Step 2](../02-register-data-asset/README.md).
+is available. Then use `rhoai-user-data-curator`, or your own RHOAI user with
+project `admin` permissions, for [Step 2](../02-register-data-asset/README.md).
 For a separate-account walkthrough, see the optional
 [sample users and roles guide](../supplementary/users-and-roles.md).
 

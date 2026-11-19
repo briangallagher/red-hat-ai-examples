@@ -11,7 +11,7 @@ through a person's **project role**, or grant access to **Data Registry assets
 only**. Choose based on whether that person also needs access to other resources
 in the project. If you followed the optional
 [sample users and roles guide](../supplementary/users-and-roles.md), use
-`rhoai-user-builder` as the person granting access and
+`rhoai-user-data-curator` as the person granting access and
 `rhoai-user-recipient` as the recipient. Otherwise, use your own RHOAI user
 with project `admin` permissions as the grantor and another RHOAI user as the
 recipient; replace `rhoai-user-recipient` in the commands below with that

@@ -14,8 +14,9 @@ minimum for Steps 2–4 is an RHOAI user with project `admin`; Step 4 is optiona
 
 > **Optional prerequisite — sample users:** To follow this workflow with
 > separate accounts, see [Create sample users and roles](supplementary/users-and-roles.md)
-> before Step 1. It uses `rhoai-admin-dave` for Step 1,
-> `rhoai-user-builder` for Steps 2–3, and `rhoai-user-recipient` in Step 4.
+> before Step 1. It uses `rhoai-admin` for Step 1,
+> `rhoai-user-data-curator` for Steps 2–3, and
+> `rhoai-user-recipient` in Step 4.
 > Skip it if your existing accounts already have the required access.
 > These are example usernames; you can use your own RHOAI accounts if they
 > meet each step's minimum permissions.
