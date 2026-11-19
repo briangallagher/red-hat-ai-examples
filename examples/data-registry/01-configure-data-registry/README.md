@@ -5,6 +5,8 @@ to configure RHOAI components and their supporting resources. Enable the Data
 Registry component, configure its metadata database, deploy an instance, and
 confirm the dashboard is available. Then an RHOAI user with project `admin`
 permissions can continue with [Step 2](../02-register-data-asset/README.md).
+For a separate-account walkthrough, see the optional
+[sample users and roles guide](../supplementary/users-and-roles.md).
 
 > **Technology Preview:** Technology Preview features are not supported with Red Hat production service-level agreements (SLAs), might not be functionally complete, and are not recommended for production. See the Red Hat support scope for Technology Preview features before using this example.
 

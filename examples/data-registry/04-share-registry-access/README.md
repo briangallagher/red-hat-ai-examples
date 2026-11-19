@@ -9,7 +9,10 @@ This optional step explores sharing after Steps 2 and 3. The collection and
 assets belong to the `data-registry-example` project. You can share the assets
 through a person's **project role**, or grant access to **Data Registry assets
 only**. Choose based on whether that person also needs access to other resources
-in the project.
+in the project. If you followed the optional
+[sample users and roles guide](../supplementary/users-and-roles.md), use
+`rhoai-user-builder` as the person granting access and
+`rhoai-user-recipient` as the recipient.
 
 ## Option 1: Share the whole project
 
@@ -28,11 +31,11 @@ access to another RHOAI user by running **one** of these commands:
 
 ```bash
 # Give the RHOAI user project-wide read access, including Data Registry assets.
-oc adm policy add-role-to-user view example-user -n data-registry-example
+oc adm policy add-role-to-user view rhoai-user-recipient -n data-registry-example
 
 # Or give the RHOAI user project-wide administration, including Data Registry
 # assets.
-oc adm policy add-role-to-user admin example-user -n data-registry-example
+oc adm policy add-role-to-user admin rhoai-user-recipient -n data-registry-example
 ```
 
 For a group, use the matching command:
@@ -72,11 +75,11 @@ For an RHOAI user, select the level of access and run **one** command:
 ```bash
 # Let the RHOAI user view Data Registry assets in this project.
 oc adm policy add-role-to-user feast-data-registry-viewer \
-  example-user -n data-registry-example
+  rhoai-user-recipient -n data-registry-example
 
 # Or let the RHOAI user manage Data Registry assets in this project.
 oc adm policy add-role-to-user feast-data-registry-admin \
-  example-user -n data-registry-example
+  rhoai-user-recipient -n data-registry-example
 ```
 
 For a group, use the matching group command:
@@ -109,7 +112,7 @@ A RHOAI user with project `admin` permissions can inspect the recipient's
 effective rules:
 
 ```bash
-oc auth can-i --list -n data-registry-example --as=example-user
+oc auth can-i --list -n data-registry-example --as=rhoai-user-recipient
 ```
 
 Look for the `dataregistry.opendatahub.io` rules. Then make an actual Data
@@ -118,7 +121,7 @@ project appears in its selector. For registry-only access, check a separate
 project resource too:
 
 ```bash
-oc auth can-i --as=example-user get pods -n data-registry-example
+oc auth can-i --as=rhoai-user-recipient get pods -n data-registry-example
 ```
 
 That command should return `no` if the RHOAI user has no other grant to pods in

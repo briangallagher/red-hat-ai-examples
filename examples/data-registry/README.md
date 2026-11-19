@@ -12,6 +12,12 @@ registers and uses assets in Steps 2 and 3. One person can fill both personas,
 but RHOAI admin status alone does not imply project `admin` permissions. The
 minimum for Steps 2–4 is an RHOAI user with project `admin`; Step 4 is optional.
 
+> **Optional prerequisite — sample users:** To follow this workflow with
+> separate accounts, see [Create sample users and roles](supplementary/users-and-roles.md)
+> before Step 1. It uses `rhoai-admin-dave` for Step 1,
+> `rhoai-user-builder` for Steps 2–3, and `rhoai-user-recipient` in Step 4.
+> Skip it if your existing accounts already have the required access.
+
 > **Technology Preview:** Technology Preview features are not supported with
 > Red Hat production service-level agreements (SLAs), might not be functionally
 > complete, and are not recommended for production.
