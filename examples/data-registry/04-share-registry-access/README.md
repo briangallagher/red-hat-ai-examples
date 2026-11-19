@@ -17,6 +17,39 @@ with project `admin` permissions as the grantor and another RHOAI user as the
 recipient; replace `rhoai-user-recipient` in the commands below with that
 user's username.
 
+## Who applies the grants
+
+Run the grant and revoke commands as an **OpenShift project administrator**
+in `data-registry-example`. With the sample accounts, this is
+`rhoai-user-data-curator`, which received project `admin` when it created the
+project in Step 2. Use the recipient's own session only for verification.
+
+| Step 4 action | Who can apply it |
+| --- | --- |
+| Grant project `view` or `admin` in Option 1 | A user with project `admin` in the target project. |
+| Bind `feast-data-registry-viewer` or `feast-data-registry-admin` in Option 2 | A user with project `admin` in the target project, with the registry roles already installed. |
+| Create and bind the project-discovery Role | A user with project `admin` in the target project. |
+| Create, bind, or revoke the optional Secret-list Role | A user with project `admin` in the target project, after accepting the credential-read scope described below. |
+
+A cluster administrator can also perform these actions, but cluster-admin
+access is not required for the namespaced grants in this step. **RHOAI
+administrator status alone is not sufficient**: that user also needs the
+necessary OpenShift permissions in the target project. Similarly,
+`feast-data-registry-admin` grants catalog management, not permission to
+create Roles or RoleBindings or share access with another user.
+
+The table describes the tested installation. A more narrowly delegated user
+can also perform a particular action when explicitly authorized. Kubernetes
+requires permission to manage the relevant Role or RoleBinding and prevents
+granting permissions the grantor does not hold, unless explicitly delegated
+through `bind` or `escalate`. See the
+[Kubernetes RBAC delegation rules](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#privilege-escalation-prevention-and-bootstrapping).
+
+The operator-provided registry ClusterRoles must already exist from the
+registry setup. Installing or changing cluster-scoped roles belongs to
+platform setup and is outside Step 4; the commands below create only
+namespace-scoped Roles and RoleBindings.
+
 ## Option 1: Share the whole project
 
 On the RHOAI 3.6 installation used for this guide, Data Registry permissions
