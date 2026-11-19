@@ -17,6 +17,8 @@ minimum for Steps 2–4 is an RHOAI user with project `admin`; Step 4 is optiona
 > before Step 1. It uses `rhoai-admin-dave` for Step 1,
 > `rhoai-user-builder` for Steps 2–3, and `rhoai-user-recipient` in Step 4.
 > Skip it if your existing accounts already have the required access.
+> These are example usernames; you can use your own RHOAI accounts if they
+> meet each step's minimum permissions.
 
 > **Technology Preview:** Technology Preview features are not supported with
 > Red Hat production service-level agreements (SLAs), might not be functionally

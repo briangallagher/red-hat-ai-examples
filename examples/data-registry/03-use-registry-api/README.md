@@ -31,10 +31,11 @@ in the notebook if you created these resources in another project.
 
 ### Minimum access
 
-Use your **RHOAI user account** with the project `admin` role in the same
-project where you completed Step 2. **Cluster-admin access is not required for
-Step 3.** If you do not already have project `admin`, ask an RHOAI admin to
-grant access before starting the workbench.
+For the sample-user walkthrough, use `rhoai-user-builder` with the project
+`admin` role in the same project where you completed Step 2. You can use your
+own RHOAI user account instead if it has that role. **Cluster-admin access is
+not required for Step 3.** If you do not already have project `admin`, ask an
+RHOAI admin to grant access before starting the workbench.
 
 On the verified cluster, project `admin` let this RHOAI user create a workbench,
 attach the existing connection, read and create Data Registry collections and
@@ -50,15 +51,16 @@ prompt. Leave `USER_TOKEN` empty. Do not use a cluster-admin token or the
 workbench ServiceAccount token, and do not paste a token into a notebook cell:
 JupyterLab can autosave cell contents to disk.
 
-> **Verification scope:** The first run used a token from an account with
-> cluster-admin access. A second RHOAI user, `endUser1`, had project `admin`
-> but no cluster-admin access. That user created a new workbench, attached the
-> connection, and passed all ten notebook code cells with their own token. A
-> separate run with the same user created fresh metadata and verified every
-> field on read-back. The full runs passed the token privately to a separate
-> kernel; the notebook's masked
-> prompt was tested separately with non-secret input. This verifies project
-> `admin` on this cluster; permissions can differ elsewhere.
+> **Verification scope:** This records prior testing, not an alternate
+> walkthrough account. An initial test used a cluster-admin account; a second
+> RHOAI user, `endUser1`, had project `admin` but no cluster-admin access.
+> That user created a workbench, attached the connection, and passed all ten
+> notebook code cells with their own token. A separate run created fresh
+> metadata and verified every field on read-back. The full runs passed the
+> token privately to a separate kernel; the notebook's masked prompt was
+> tested separately with non-secret input. For the sample-user walkthrough,
+> use `rhoai-user-builder`. This verifies project `admin` on this cluster;
+> permissions can differ elsewhere.
 
 ## 2. Create the workbench and attach the connection
 
