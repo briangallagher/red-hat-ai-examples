@@ -52,9 +52,11 @@ person needs the corresponding access to the project as a whole.
 > **Project visibility:** A Data Registry-only RoleBinding grants access to
 > registry resources, but might not make the project appear in the dashboard
 > selector. The recipient must also be able to discover the project. This guide
-> does not yet define a tested least-privilege project-discovery grant, so verify
-> the selector using the recipient's account before treating this option as
-> complete.
+> does not yet define a tested least-privilege project-discovery grant. A
+> namespace-scoped RoleBinding does not grant access to the cluster-scoped
+> Project resource, and a `get`-only rule may not be enough if the selector
+> lists projects. Verify the selector using the recipient's account before
+> treating this option as complete.
 
 If a teammate needs the catalog but should not receive broad access to other
 resources in `data-registry-example`, bind one of the operator-provided Data
