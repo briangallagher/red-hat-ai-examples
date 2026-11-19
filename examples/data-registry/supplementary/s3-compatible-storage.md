@@ -63,6 +63,22 @@ RHOAI admin with namespace or storage class permissions if your access does not
 include those operations. The cluster must be able to pull
 `docker.io/chrislusf/seaweedfs:4.52` or an approved mirror of it.
 
+Dashboard connection verification is optional. If you use it, Step 2 may ask
+an RHOAI admin to apply NetworkPolicies in `redhat-ods-applications`; this is
+separate from installing SeaweedFS in `data-registry-storage`. Applying those
+policies requires `create` permission for NetworkPolicies in
+`redhat-ods-applications`; project permissions in `data-registry-example` do
+not grant it. This permission is often held by a cluster admin. Check with:
+
+```bash
+oc auth can-i create networkpolicies.networking.k8s.io \
+  -n redhat-ods-applications
+```
+
+If the result is `no`, ask a cluster admin or delegated namespace admin to
+apply the optional policies described in the
+[Step 2 guide](../02-register-data-asset/README.md#optional-verify-an-in-cluster-seaweedfs-connection).
+
 Confirm the cluster before creating resources:
 
 ```bash

@@ -187,51 +187,75 @@ the default SeaweedFS endpoint, see the next section.
 
 ### Optional: verify an in-cluster SeaweedFS connection
 
-The dashboard's **Verify connection** action sends a request to the Core BFF,
-which checks the S3 endpoint from a dashboard pod. A workstation port-forward
-test does not check this network path. This SeaweedFS-specific policy is
-needed only when all of the following apply:
+The dashboard's **Verify connection** action crosses two network paths: the
+dashboard proxy connects to the Core BFF service on TCP port `8943`, then the
+Core BFF connects to the S3 endpoint. A workstation port-forward test does not
+check either path.
+
+If the dashboard proxy logs a `Connect Timeout Error` for
+`rhods-dashboard.redhat-ods-applications.svc.cluster.local:8943`, apply the
+[Core BFF egress policy](../supplementary/dashboard-core-bff-egress.yaml). It
+allows dashboard pods to connect to peer dashboard pods on TCP port `8943`.
+For the in-cluster SeaweedFS endpoint, the Core BFF pod also needs egress to
+SeaweedFS on TCP port `8333`; if that path is blocked, apply the
+[SeaweedFS egress policy](../supplementary/dashboard-seaweedfs-egress.yaml).
+Both policies are additive and leave the operator-managed dashboard policy
+unchanged. The tested RHOAI 3.6 cluster needed both: applying the SeaweedFS
+policy alone still returned HTTP `504` because the dashboard proxy could not
+reach the Core BFF service.
+
+The SeaweedFS-specific policy is only relevant when all of the following
+apply:
 
 - You use the in-cluster SeaweedFS endpoint
   `http://seaweedfs.data-registry-storage.svc:8333`.
 - You want to use the optional **Verify connection** action.
-- The dashboard's existing egress policies block TCP port `8333` (the action
-  may report a 10-second timeout).
+- The dashboard's existing egress policies block TCP port `8333`.
 
-It is not needed for an external S3 endpoint, when verification already
-succeeds, or when you skip the optional check. If needed, ask an RHOAI admin
-with network-policy permissions to apply the narrowly scoped
-[dashboard egress policy](../supplementary/dashboard-seaweedfs-egress.yaml).
-Its egress rule permits dashboard pods to reach only SeaweedFS pods in
-`data-registry-storage` on TCP port `8333`; it does not change the
-operator-managed dashboard policy. The manifest assumes the default RHOAI and
-SeaweedFS namespaces and labels. Adjust its `metadata.namespace` and selectors
-if your installation uses different values.
-
-Apply the policy from this directory, then retry **Verify connection**:
+The SeaweedFS policy is not needed for an external S3 endpoint, when that
+egress path is already allowed, or when you skip the optional check. The Core
+BFF policy is needed only if dashboard-to-Core-BFF egress on TCP port `8943` is
+blocked. Ask an RHOAI admin with network-policy permissions to apply the
+narrow policy or policies for the blocked path. Creating these policies
+requires `create` permission for NetworkPolicies in `redhat-ods-applications`;
+project-admin access in `data-registry-example` does not grant it. This is
+often a cluster-admin task, though a delegated namespace admin may also have
+the permission. Check the identity that will apply them:
 
 ```bash
+oc auth can-i create networkpolicies.networking.k8s.io \
+  -n redhat-ods-applications
+```
+
+If the result is `no`, ask a cluster admin or delegated namespace admin to
+apply them. The manifests assume the default RHOAI and SeaweedFS namespaces and
+labels. Adjust their namespace and selectors if your installation uses
+different values.
+
+Apply the policy or policies that match the blocked path from this directory,
+then retry **Verify connection**. For the tested RHOAI 3.6 cluster, apply both:
+
+```bash
+oc apply -f ../supplementary/dashboard-core-bff-egress.yaml
 oc apply -f ../supplementary/dashboard-seaweedfs-egress.yaml
 ```
 
-After verification, remove the allowance if you do not expect to use this check
-again:
+After verification, remove any allowances you added if you do not expect to
+use this check again:
 
 ```bash
+oc delete -f ../supplementary/dashboard-core-bff-egress.yaml
 oc delete -f ../supplementary/dashboard-seaweedfs-egress.yaml
 ```
 
 The policy is for the dashboard verification request only. A workbench that
 reads S3 objects needs its own permitted network path.
 
-During cluster validation on 17 November 2026, the same saved connection first
-reported a verification failure and then verified on a retry about 20 minutes
-later, with no connection or policy changes. Core BFF logs recorded the
-successful retry but no corresponding failed probe; SeaweedFS logs had no
-request-level failure details. An unauthenticated request from Core BFF reached
-SeaweedFS and received HTTP 403, which confirms network reachability but does
-not verify the signed S3 request. The cause of that one-off failure remains
-unknown, so it is not evidence that applying the policy fixed the retry.
+Validation on RHOAI 3.6 found that the operator-managed dashboard egress policy
+did not allow TCP port `8943` between dashboard pods. The dashboard proxy
+timed out connecting to the Core BFF before the S3 check ran. Adding the narrow
+Core BFF policy and the SeaweedFS `8333` policy allowed **Verify connection**
+to succeed.
 
 ## 4. Create a collection
 
