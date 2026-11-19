@@ -177,17 +177,11 @@ oc wait --for=jsonpath='{.status.phase}'=Ready \
   featurestore/data-registry -n rhoai-data-registry --timeout=10m
 
 oc get featurestore/data-registry -n rhoai-data-registry
-oc get deployments,pods,services,routes -n rhoai-data-registry
 ```
 
 In the RHOAI dashboard, open **AI hub** and then **Data Tech Preview**.
 Confirm that the **Data assets** page loads and that you can select an RHOAI
 project.
-
-If `oc get deployments,pods,services,routes` returns `Forbidden`, run that
-command as a cluster admin or a user with delegated read access. An RHOAI
-admin might not have permission to list workload resources in the
-operator-managed namespace.
 
 ![Data Registry empty state in the RHOAI 3.6 AI hub Data page, with the agent-sandbox-system project selected.](images/data-registry-empty-state.png)
 
