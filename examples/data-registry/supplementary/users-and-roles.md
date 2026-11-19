@@ -6,10 +6,17 @@ Steps 2–3, and a second **RHOAI user** to receive access in Step 4. The
 cluster-admin account used for setup is an existing account, not one of the
 three sample users.
 
-Skip this guide if your cluster already has suitable accounts. The sample
-users use the groups already shown in RHOAI **Settings → User management**:
+Prefer existing accounts with the required access; skip this guide if you
+already have them. The sample users use the groups shown in RHOAI
+**Settings → User management**:
 `rhods-admins` for administrators and `system:authenticated` for users. This
 guide does not create or replace those groups.
+
+> **Demonstration accounts only:** Create these accounts on an isolated
+> development or test cluster, not a shared or production cluster. After the
+> walkthrough, revoke the grants made here, remove `rhoai-admin` from
+> `rhods-admins` if added here, and delete only accounts created for this guide
+> through your identity provider's normal process.
 
 ## Example accounts and access
 
