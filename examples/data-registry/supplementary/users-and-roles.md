@@ -6,26 +6,31 @@ Steps 2–3, and a second **RHOAI user** to receive access in Step 4. The
 cluster-admin account used for setup is an existing account, not one of the
 three sample users.
 
-Skip this guide if your cluster already has suitable accounts and groups. The
-commands below use locally managed OpenShift groups. If your organization
-manages users or groups in an identity provider, create the accounts there and
-follow the cluster's supported group-synchronization process.
+Skip this guide if your cluster already has suitable accounts. The sample
+users use the groups already shown in RHOAI **Settings → User management**:
+`rhods-admins` for administrators and `system:authenticated` for users. This
+guide does not create or replace those groups.
 
 ## Example accounts and access
 
-| Account | OpenShift group | Walkthrough access | Used for |
+| Account | RHOAI User Management setting | OpenShift group or role | Walkthrough access |
 | --- | --- | --- | --- |
-| Existing cluster admin | Existing cluster-admin assignment | Full cluster scope | Provision identities, groups, and the minimum required RBAC. |
-| `rhoai-admin-dave` | `rhoai-admins` | RHOAI administrator group plus the specific OpenShift RBAC required by Step 1. It is not assigned `cluster-admin`. | Step 1. |
-| `rhoai-user-builder` | `rhoai-users` | Project `admin` in `data-registry-example`. | Steps 2–3; grants access in Step 4. |
-| `rhoai-user-recipient` | `rhoai-users` | No project access initially. Step 4 grants project `view` for Option 1, or a Data Registry role for Option 2. | Step 4 recipient. |
+| Existing cluster admin | Automatically an RHOAI administrator | `cluster-admin` | Full cluster scope; provisions identities and grants required RBAC. |
+| `rhoai-admin-dave` | Red Hat OpenShift AI administrator groups | `rhods-admins` | Step 1; also needs scoped OpenShift RBAC for its resource changes. |
+| `rhoai-user-builder` | Red Hat OpenShift AI user groups | `system:authenticated` | Project `admin` in `data-registry-example`; Steps 2–3 and grants access in Step 4. |
+| `rhoai-user-recipient` | Red Hat OpenShift AI user groups | `system:authenticated` | No project role initially. Step 4 grants project `view` for Option 1 or a Data Registry role for Option 2. |
 
-RHOAI group membership and project permissions are separate. The RHOAI admin
-group grants administrator functions in the RHOAI dashboard; it does not make
+The **Red Hat OpenShift AI administrator groups** setting uses the existing
+`rhods-admins` group. Add `rhoai-admin-dave` to that group; cluster admins are
+already assigned RHOAI administrator access automatically. The **Red Hat
+OpenShift AI user groups** setting uses `system:authenticated`, which includes
+all authenticated users, so the two RHOAI users need no group-membership change.
+
+RHOAI group membership and project permissions are separate. Membership in
+`rhods-admins` grants RHOAI dashboard administrator functions; it does not make
 the member a cluster administrator. Step 1 also edits the `DataScienceCluster`
 and dashboard configuration and creates supporting resources. A cluster admin
 must grant `rhoai-admin-dave` approved, scoped OpenShift RBAC for those actions.
-Do not bind the `rhoai-admins` group to `cluster-admin` for this walkthrough.
 
 The project `admin` role for `rhoai-user-builder` is a namespaced grant. It
 provides the minimum project access used by Steps 2–3 and does not grant
@@ -37,11 +42,11 @@ when you perform the sharing step.
 ```mermaid
 flowchart TB
   subgraph cluster[One OpenShift cluster]
-    ca["Existing cluster admin<br/>cluster-admin<br/>full cluster scope"]
+    ca["Existing cluster admin<br/>cluster-admin<br/>full cluster scope + automatic RHOAI admin"]
     subgraph scoped["RHOAI roles and project grants<br/>scoped within the cluster"]
-      subgraph groups[Groups selected in RHOAI user management]
-        admins["rhoai-admins<br/>RHOAI administrator access"]
-        users["rhoai-users<br/>RHOAI user access"]
+      subgraph groups["Groups already selected in RHOAI User Management"]
+        admins["Red Hat OpenShift AI administrator groups<br/>rhods-admins"]
+        users["Red Hat OpenShift AI user groups<br/>system:authenticated"]
       end
       rhoaiAdmin["RHOAI admin<br/>rhoai-admin-dave<br/>Step 1 + approved scoped RBAC"]
       builder["RHOAI user<br/>rhoai-user-builder<br/>project admin · Steps 2–3"]
@@ -50,7 +55,9 @@ flowchart TB
       setup["Step 1 resources<br/>DataScienceCluster · dashboard config<br/>registry Secret and FeatureStore"]
     end
 
-    ca -->|creates accounts and OpenShift groups| groups
+    ca -->|adds rhoai-admin-dave to existing group| admins
+    ca -->|provisions sample accounts| builder
+    ca -->|provisions sample accounts| recipient
     ca -->|grants reviewed Step 1 RBAC| rhoaiAdmin
     ca -->|grants project admin| builder
     admins --> rhoaiAdmin
@@ -132,36 +139,33 @@ oc whoami
 
 Repeat with `rhoai-user-builder` and `rhoai-user-recipient`.
 
-## 2. Create the OpenShift groups
+## 2. Use the groups already configured for RHOAI
 
-Create local OpenShift groups and add the sample accounts:
+RHOAI User Management uses the existing `rhods-admins` group for **Red Hat
+OpenShift AI administrator groups** and the built-in `system:authenticated`
+group for **Red Hat OpenShift AI user groups**. Do not create custom groups or
+change these settings for this walkthrough.
 
-```bash
-oc adm groups new rhoai-admins rhoai-admin-dave
-oc adm groups new rhoai-users \
-  rhoai-user-builder rhoai-user-recipient
-
-oc get groups rhoai-admins rhoai-users
-```
-
-If these groups already exist, add the users instead:
+After the sample identities have been created and `rhoai-admin-dave` has
+logged in, add only that user to the existing administrator group:
 
 ```bash
-oc adm groups add-users rhoai-admins rhoai-admin-dave
-oc adm groups add-users rhoai-users \
-  rhoai-user-builder rhoai-user-recipient
+oc get group rhods-admins
+oc adm groups add-users rhods-admins rhoai-admin-dave
+oc get group rhods-admins -o yaml
 ```
 
-If groups come from an external identity provider, use the cluster's supported
-group-synchronization process instead of managing their membership with
-`oc adm groups`.
+If `rhods-admins` membership is synchronized from an external identity
+provider, add the user there and follow the cluster's supported group
+synchronization process instead.
 
-In the RHOAI dashboard, open **Settings → User management** and select
-`rhoai-admins` as an administrator group and `rhoai-users` as a user group.
-This group selection controls RHOAI dashboard access. It does not grant
-project roles or the OpenShift permissions needed by Step 1. On clusters that
-allow all authenticated users by default, group restriction is optional. See
-the RHOAI documentation for [selecting the administrator and user
+In the RHOAI dashboard, open **Settings → User management** and verify that
+**Red Hat OpenShift AI administrator groups** lists `rhods-admins` and **Red
+Hat OpenShift AI user groups** lists `system:authenticated`. All authenticated
+users are members of `system:authenticated`, so the two sample RHOAI users
+need no group-membership change. Group membership controls RHOAI dashboard
+access; it does not grant project roles or the OpenShift permissions needed by
+Step 1. See the RHOAI documentation for [managing users and
 groups](https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/3.5/html/managing_openshift_ai/managing-users-and-groups).
 
 ## 3. Assign the project roles
