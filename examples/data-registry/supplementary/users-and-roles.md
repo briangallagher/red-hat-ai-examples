@@ -90,7 +90,9 @@ Create the three accounts in that identity provider. For a development or test
 cluster that already uses the **HTPasswd** identity provider, a cluster admin
 can add the sample users to its existing file. Find the HTPasswd provider's
 secret name under `spec.identityProviders[].htpasswd.fileData.name` in the
-OAuth output, then set it below:
+OAuth output, then set it below. Run these commands from a private temporary
+directory outside the repository; `users.htpasswd` contains password hashes
+and must not be committed.
 
 ```bash
 umask 077
@@ -111,6 +113,8 @@ oc create secret generic "$HTPASS_SECRET" \
   --from-file=htpasswd=users.htpasswd \
   --dry-run=client -o yaml -n openshift-config | oc replace -f -
 ```
+
+After confirming the Secret update, remove the local `users.htpasswd` file.
 
 HTPasswd is intended for development and test clusters. For other identity
 providers, provision these accounts through the organization's normal identity
