@@ -180,7 +180,9 @@ oc get featurestore/data-registry -n rhoai-data-registry
 oc get deployments,pods,services,routes -n rhoai-data-registry
 ```
 
-In the RHOAI dashboard, open **AI hub** and then **Data**. Confirm that you can select an RHOAI project and that the Data Registry page loads.
+In the RHOAI dashboard, open **AI hub** and then **Data Tech Preview**.
+Confirm that the **Data assets** page loads and that you can select an RHOAI
+project.
 
 If `oc get deployments,pods,services,routes` returns `Forbidden`, run that
 command as a cluster admin or a user with delegated read access. An RHOAI
