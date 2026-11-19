@@ -1,9 +1,12 @@
-# Step 4: Share Data Registry assets
+# Step 4 (optional): Share Data Registry assets
 
 [← Step 3: Use the API](../03-use-registry-api/README.md) · [Guide index](../README.md)
 
-The collection and assets from Step 2 belong to the `data-registry-example`
-project. Data Registry checks access in that project. You can share the assets
+**Minimum persona:** An **RHOAI user** with project `admin` permissions in the
+project containing the assets.
+
+This optional step explores sharing after Steps 2 and 3. The collection and
+assets belong to the `data-registry-example` project. You can share the assets
 through a person's **project role**, or grant access to **Data Registry assets
 only**. Choose based on whether that person also needs access to other resources
 in the project.
@@ -19,15 +22,16 @@ are included in the standard OpenShift project roles:
 | `admin` | View, create, update, and delete collections and assets. | Administration of other project resources as well. |
 
 For example, if a teammate already has `view` in `data-registry-example`, they
-can view its Data Registry assets without another RoleBinding. A project
-`admin` can manage those assets. To grant project access to a new user, a
-project administrator can run **one** of these commands:
+can view its Data Registry assets without another RoleBinding. An RHOAI user
+with project `admin` permissions can manage those assets and grant project
+access to another RHOAI user by running **one** of these commands:
 
 ```bash
-# Give the user project-wide read access, including Data Registry assets.
+# Give the RHOAI user project-wide read access, including Data Registry assets.
 oc adm policy add-role-to-user view example-user -n data-registry-example
 
-# Or give the user project-wide administration, including Data Registry assets.
+# Or give the RHOAI user project-wide administration, including Data Registry
+# assets.
 oc adm policy add-role-to-user admin example-user -n data-registry-example
 ```
 
@@ -45,6 +49,13 @@ person needs the corresponding access to the project as a whole.
 
 ## Option 2: Share only Data Registry assets
 
+> **Project visibility:** A Data Registry-only RoleBinding grants access to
+> registry resources, but might not make the project appear in the dashboard
+> selector. The recipient must also be able to discover the project. This guide
+> does not yet define a tested least-privilege project-discovery grant, so verify
+> the selector using the recipient's account before treating this option as
+> complete.
+
 If a teammate needs the catalog but should not receive broad access to other
 resources in `data-registry-example`, bind one of the operator-provided Data
 Registry ClusterRoles **in that project**:
@@ -54,14 +65,14 @@ Registry ClusterRoles **in that project**:
 | `feast-data-registry-viewer` | View collections and assets. |
 | `feast-data-registry-admin` | View, create, update, and delete collections and assets. |
 
-For a user, select the level of access and run **one** command:
+For an RHOAI user, select the level of access and run **one** command:
 
 ```bash
-# Let the user view Data Registry assets in this project.
+# Let the RHOAI user view Data Registry assets in this project.
 oc adm policy add-role-to-user feast-data-registry-viewer \
   example-user -n data-registry-example
 
-# Or let the user manage Data Registry assets in this project.
+# Or let the RHOAI user manage Data Registry assets in this project.
 oc adm policy add-role-to-user feast-data-registry-admin \
   example-user -n data-registry-example
 ```
@@ -87,12 +98,13 @@ ClusterRole or grant project-wide administration.
 
 These roles cover Data Registry resources **throughout the selected project**.
 They do not select individual collections or assets. OpenShift permissions are
-additive: a Data Registry RoleBinding cannot remove access that the user
+additive: a Data Registry RoleBinding cannot remove access that the RHOAI user
 already has through a project role or another binding.
 
 ## Verify the result
 
-A project administrator can inspect the user's effective rules:
+A RHOAI user with project `admin` permissions can inspect the recipient's
+effective rules:
 
 ```bash
 oc auth can-i --list -n data-registry-example --as=example-user
@@ -107,8 +119,8 @@ project resource too:
 oc auth can-i --as=example-user get pods -n data-registry-example
 ```
 
-That command should return `no` if the user has no other grant to pods in the
-project. Some `oc` versions cannot check Data Registry's virtual resources
+That command should return `no` if the RHOAI user has no other grant to pods in
+the project. Some `oc` versions cannot check Data Registry's virtual resources
 directly with `oc auth can-i`; the effective rule list and an actual Data
 Registry request are more reliable checks.
 

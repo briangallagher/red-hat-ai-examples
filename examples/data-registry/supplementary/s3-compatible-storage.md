@@ -59,8 +59,8 @@ permission to create a namespace and a dynamic `StorageClass` with at least
 10 Gi of capacity. A default StorageClass is simplest. If the cluster has no
 default, choose an available dynamic class from `oc get storageclass` and set
 `storageClassName` in the PVC in `seaweedfs.yaml` before applying it. Ask an
-administrator for a namespace or storage class if your access does not include
-those operations. The cluster must be able to pull
+RHOAI admin with namespace or storage class permissions if your access does not
+include those operations. The cluster must be able to pull
 `docker.io/chrislusf/seaweedfs:4.52` or an approved mirror of it.
 
 Confirm the cluster before creating resources:

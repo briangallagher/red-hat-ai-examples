@@ -1,9 +1,10 @@
 # Step 1: Configure the Data Registry in RHOAI 3.6
 
-This step is for a cluster administrator. Enable the Data Registry component,
-configure its metadata database, deploy an instance, and confirm the dashboard
-is available. Then continue with [Step 2](../02-register-data-asset/README.md)
-to register a data asset.
+This step is for an **RHOAI admin** with the cluster-level permissions needed
+to configure RHOAI components and their supporting resources. Enable the Data
+Registry component, configure its metadata database, deploy an instance, and
+confirm the dashboard is available. Then an RHOAI user with project `admin`
+permissions can continue with [Step 2](../02-register-data-asset/README.md).
 
 > **Technology Preview:** Technology Preview features are not supported with Red Hat production service-level agreements (SLAs), might not be functionally complete, and are not recommended for production. See the Red Hat support scope for Technology Preview features before using this example.
 
@@ -19,7 +20,10 @@ RHOAI project (authorization boundary)
         └── Optional reference to a RHOAI connection
 ```
 
-An asset belongs to one RHOAI project and one collection. A user who can view registry resources in the project can view every asset and collection in that project. Collections organize metadata; they are not separate authorization boundaries.
+An asset belongs to one RHOAI project and one collection. An RHOAI user who can
+view registry resources in the project can view every asset and collection in
+that project. Collections organize metadata; they are not separate
+authorization boundaries.
 
 ## Prerequisites
 
@@ -27,11 +31,12 @@ You need:
 
 - Red Hat OpenShift AI 3.6 installed on OpenShift;
 - the `oc` command-line interface logged in to the cluster;
-- cluster administrator access for enabling the Technology Preview component;
+- an RHOAI admin account with permission to manage the DataScienceCluster,
+  dashboard configuration, and supporting resources for this Technology Preview;
 - a reachable PostgreSQL database for registry metadata; and
-- permission to edit the RHOAI `DataScienceCluster` and dashboard configuration.
 
-Project owners can follow Steps 2 and 3 after the administrator completes this step.
+After this setup, an RHOAI user with project `admin` permissions can follow
+Steps 2 and 3 and, if needed, optional Step 4 without cluster-wide admin access.
 
 ## Enable and deploy the Data Registry
 

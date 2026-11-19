@@ -4,7 +4,12 @@
 [Step 3: Use the Data Registry API →](../03-use-registry-api/README.md) ·
 [Guide index](../README.md)
 
-In this walkthrough, you create an RHOAI project, connect it to an S3-compatible
+**Minimum persona:** An **RHOAI user** with project `admin` permissions in an
+existing target project. A reachable S3-compatible service must also be
+available. If the project or service is missing, ask an RHOAI admin to
+provision what is needed; you still need project `admin` in the target project.
+
+In this walkthrough, you use an RHOAI project, connect it to an S3-compatible
 object store, upload one fictional support document, and register that document
 in the Data Registry. The registry stores a description and a location. The
 object stays in S3-compatible storage, and the connection holds the credentials.
@@ -20,12 +25,14 @@ SeaweedFS values are shown.
 ## Before you start
 
 - Complete [Step 1](../01-configure-data-registry/README.md), or ask an
-  administrator to confirm that **AI hub → Data** loads.
+  RHOAI admin to confirm that **AI hub → Data** loads.
 - Follow the [S3-compatible storage guide](../supplementary/s3-compatible-storage.md)
   to deploy and verify SeaweedFS, or obtain an existing S3 service and its
   approved credentials. The guide covers the SeaweedFS endpoint, bucket,
   credentials, and test upload.
-- Have permission to create an RHOAI project, connection, collection, and asset.
+- Have project `admin` permissions in the existing target RHOAI project to
+  create its connection, collection, and asset. Project creation is a separate
+  setup task.
 - Keep credentials out of Git, screenshots, asset descriptions, and notebook
   outputs. This example's document contains only synthetic information.
 
@@ -45,16 +52,18 @@ The example names below are used throughout Steps 2 and 3:
 | Asset | `customer-support-faq` | Catalog entry for the document prefix. |
 | Asset path | `s3://data-registry-example/examples/customer-support/` | SeaweedFS example path; replace the bucket with yours when using another service. |
 
-## 1. Create the RHOAI project
+## 1. Select the RHOAI project
 
-In the RHOAI dashboard, open **Projects**, select **Create project**, enter
-`data-registry-example` as the project name, and create it. Select the new
-project in the project selector. A project is the access boundary: people who
-can view registry resources in it can see its collections and assets. The
-SeaweedFS deployment is in a separate namespace, so its service and PVC are
-not owned by this RHOAI project.
+In the RHOAI dashboard, open **Projects** and select the existing
+`data-registry-example` project. Confirm that you have the project `admin` role
+and select the project in the project selector. If it does not exist, ask an
+RHOAI admin to create it and grant you project `admin` permissions. A project
+is the access boundary: people who can view registry resources in it can see
+its collections and assets. The SeaweedFS deployment is in a separate
+namespace, so its service and PVC are not owned by this RHOAI project.
 
-An OpenShift administrator can create the same project from the CLI:
+An RHOAI admin with project-creation permission can create the project from the
+CLI when needed:
 
 ```bash
 oc new-project data-registry-example \
@@ -190,8 +199,8 @@ needed only when all of the following apply:
   may report a 10-second timeout).
 
 It is not needed for an external S3 endpoint, when verification already
-succeeds, or when you skip the optional check. If needed, ask a cluster
-administrator to apply the narrowly scoped
+succeeds, or when you skip the optional check. If needed, ask an RHOAI admin
+with network-policy permissions to apply the narrowly scoped
 [dashboard egress policy](../supplementary/dashboard-seaweedfs-egress.yaml).
 Its egress rule permits dashboard pods to reach only SeaweedFS pods in
 `data-registry-storage` on TCP port `8333`; it does not change the
@@ -260,7 +269,8 @@ are project-scoped; you can reuse labels that are already listed.
 Select **Register data** in **AI hub → Data**. Fill in the form using the values
 below. The form has sections for identity, format, organization, location, and
 additional properties. Select the connection you just created; this records a
-reference to it on the asset so another user can identify the intended source.
+reference to it on the asset so another RHOAI user can identify the intended
+source.
 The registry stores the connection name, not a copy of the S3 keys.
 
 | Field | Enter | Why this value is useful |
