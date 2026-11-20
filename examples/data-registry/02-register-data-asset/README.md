@@ -227,11 +227,15 @@ apply:
 - You want to use the optional **Verify connection** action.
 - The dashboard's existing egress policies block TCP port `8333`.
 
-The SeaweedFS policy is not needed for an external S3 endpoint, when that
-egress path is already allowed, or when you skip the optional check. The Core
-BFF policy is needed only if dashboard-to-Core-BFF egress on TCP port `8943` is
-blocked. In the administrator's terminal, check the identity that will apply
-the narrow policy or policies for the blocked path:
+The SeaweedFS egress policy below applies only to the in-cluster SeaweedFS
+endpoint; skip it for AWS or another external S3 endpoint. If you use **Verify
+connection** with external S3, the Core BFF still needs outbound connectivity to
+that endpoint. If cluster egress blocks it, ask your cluster admin which
+approved egress path to use. The separate Core BFF policy is needed only if
+dashboard-to-Core-BFF egress on TCP port `8943` is blocked.
+
+To apply one of the provided NetworkPolicies, check whether the account can
+create them in `redhat-ods-applications`:
 
 ```bash
 oc auth can-i create networkpolicies.networking.k8s.io \
@@ -243,8 +247,9 @@ apply them. The manifests assume the default RHOAI and SeaweedFS namespaces and
 labels. Adjust their namespace and selectors if your installation uses
 different values.
 
-Apply the policy or policies that match the blocked path from this directory,
-then retry **Verify connection**. For the tested RHOAI 3.6 cluster, apply both:
+Apply only the provided policy or policies needed for the blocked in-cluster
+path, then retry **Verify connection**. The tested in-cluster SeaweedFS setup
+needed both:
 
 ```bash
 oc apply -f ../supplementary/dashboard-core-bff-egress.yaml
