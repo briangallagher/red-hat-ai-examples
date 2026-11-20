@@ -2,12 +2,12 @@
 
 This step uses an **RHOAI admin** account with permission to configure RHOAI
 components. If you followed the optional sample-user guide, use
-`rhoai-admin`; otherwise, use your own RHOAI admin account. Keep a separate
-**cluster-admin terminal** for the namespace and connection Secret handoff
-below; a user with delegated permissions can also perform that handoff. Then use
-`rhoai-user-data-curator`, or your own RHOAI user with project `admin`
-permissions, for [Step 2](../02-register-data-asset/README.md). For a
-separate-account walkthrough, see the optional
+`rhoai-admin`; otherwise, use your own RHOAI admin account. After enabling the
+component, wait for its service namespace and complete the one-time connection
+Secret handoff below. Then use `rhoai-user-data-curator`, or your own RHOAI user
+with project `admin` permissions, for
+[Step 2](../02-register-data-asset/README.md). For a separate-account
+walkthrough, see the optional
 [sample users and roles guide](../supplementary/users-and-roles.md).
 
 > **Technology Preview:** Technology Preview features are not supported with Red Hat production service-level agreements (SLAs), might not be functionally complete, and are not recommended for production. See the Red Hat support scope for Technology Preview features before using this example.
@@ -109,13 +109,16 @@ Wait for the DataScienceCluster to report `Ready`:
 oc wait --for=jsonpath='{.status.phase}'=Ready datasciencecluster/default-dsc --timeout=10m
 ```
 
-In the **cluster-admin terminal**, wait for the service namespace before the
-Secret handoff. RHOAI group membership alone does not grant namespace access:
+The Data Registry component creates `rhoai-data-registry` as a managed service
+namespace. Wait until it appears before continuing; do not create it manually.
+If your account can view namespaces, confirm with:
 
 ```bash
-oc wait --for=create namespace/rhoai-data-registry --timeout=10m
 oc get namespace rhoai-data-registry
 ```
+
+If namespace visibility is restricted, ask the user who will create the
+connection Secret to confirm it exists.
 
 ### Create the registry instance
 
@@ -132,7 +135,10 @@ for the Data Registry when possible.
 
 The `FeatureStore` reads `Secret/data-registry-database` in
 `rhoai-data-registry`; a Secret in the PostgreSQL namespace cannot be used
-directly. In the **cluster-admin terminal**, create it using one of these paths:
+directly. Create the connection Secret before applying the `FeatureStore`. The
+user applying it needs permission to read the database credentials and create
+Secrets in `rhoai-data-registry`; RHOAI admin membership alone does not grant
+those permissions. Use one of these paths:
 
 - For the demo database, follow the [connection Secret instructions in the
   supplementary guide](../supplementary/postgresql-demo.md#configure-the-data-registry-connection).
