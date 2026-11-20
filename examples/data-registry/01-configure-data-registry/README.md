@@ -135,10 +135,12 @@ for the Data Registry when possible.
 
 The `FeatureStore` reads `Secret/data-registry-database` in
 `rhoai-data-registry`; a Secret in the PostgreSQL namespace cannot be used
-directly. Create the connection Secret before applying the `FeatureStore`. The
-user applying it needs permission to read the database credentials and create
-Secrets in `rhoai-data-registry`; RHOAI admin membership alone does not grant
-those permissions. Use one of these paths:
+directly. Create the connection Secret before applying the `FeatureStore`.
+
+Ask a cluster admin or a user with delegated OpenShift permissions to create
+the Secret. The account must be able to read the database credentials and
+create Secrets in `rhoai-data-registry`; RHOAI admin membership alone is not
+enough. Use one of these paths:
 
 - For the demo database, follow the [connection Secret instructions in the
   supplementary guide](../supplementary/postgresql-demo.md#configure-the-data-registry-connection).
