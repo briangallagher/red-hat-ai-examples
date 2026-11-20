@@ -18,6 +18,12 @@ Registry namespace to connect to TCP port 5432.
 
 ## Deploy the database
 
+> **Who runs these steps:** Creating a namespace requires a cluster admin or
+> user delegated project-creation permission. With the default OpenShift project
+> request template, the requester receives project `admin`; that project admin
+> (or a delegated user with the required permissions) creates the database
+> Secret and deploys PostgreSQL.
+
 You need `oc`, `openssl`, permission to create a namespace or use an existing
 one, and a default dynamic StorageClass with at least 5 Gi available. The
 manifest uses the OpenShift-oriented PostgreSQL 16 image from
@@ -74,13 +80,16 @@ internal service address is
 
 After enabling the Data Registry component in
 [Step 1](../01-configure-data-registry/README.md), wait for the
-`rhoai-data-registry` namespace to be created. Then create the Secret that the
-Data Registry reads in that namespace. A cluster admin or a user delegated
-access to the database Secret and permission to create the connection Secret
-must run this command; `rhods-admins` membership alone does not grant that access.
-The Secret stores the endpoint, database credentials, and Feast SQL configuration. In the
-cluster-admin terminal, reload the original password from the database Secret.
-Use your database namespace if it differs from the default below:
+`rhoai-data-registry` namespace to appear. This namespace is managed by RHOAI;
+do not create it manually. A cluster admin or delegated user with permission
+to read the database Secret and create `data-registry-database` in
+`rhoai-data-registry` can perform this one-time handoff. RHOAI admin status or
+`rhods-admins` membership alone does not grant those permissions.
+
+The Secret stores the endpoint, database credentials, and Feast SQL
+configuration. From a terminal logged in as the authorized user, reload the
+original password from the database Secret. Use your database namespace if it
+differs from the default below:
 
 ```bash
 set -euo pipefail
