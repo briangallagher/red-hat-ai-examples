@@ -9,9 +9,10 @@ For convenience, you can run this guide as a cluster admin. For a more realistic
 multi-persona workflow, use an **RHOAI admin** for setup (Step 1) and an
 **RHOAI user** who creates the project for Steps 2–3. With the default
 OpenShift project request template, the requester receives project `admin`;
-RHOAI admin status alone does not grant project `admin`. Some optional
-prerequisites, such as creating sample users, require a cluster admin. Step 4
-is optional.
+RHOAI admin status alone does not grant project `admin`. Some optional prerequisites, such as creating sample users, require a cluster
+admin. The user listed for a core step may still need cluster-admin access for
+security-related tasks such as creating Secrets or NetworkPolicies. Step 4 is
+optional.
 
 > **Optional prerequisite — sample users:** Follow the
 > [Create sample users and roles](supplementary/users-and-roles.md) guide for
