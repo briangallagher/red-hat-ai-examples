@@ -1,4 +1,7 @@
-# Step 1: Configure the Data Registry in RHOAI 3.6
+# Step 1: Configure the Data Registry
+
+[Step 2: Register a data asset →](../02-register-data-asset/README.md) ·
+[Guide index](../README.md)
 
 This step uses an **RHOAI admin** account with permission to configure RHOAI
 components. If you followed the optional sample-user guide, use
@@ -9,8 +12,6 @@ with project `admin` permissions, for
 [Step 2](../02-register-data-asset/README.md). For a separate-account
 walkthrough, see the optional
 [sample users and roles guide](../supplementary/users-and-roles.md).
-
-> **Technology Preview:** Technology Preview features are not supported with Red Hat production service-level agreements (SLAs), might not be functionally complete, and are not recommended for production. See the Red Hat support scope for Technology Preview features before using this example.
 
 ## How the registry is organized
 
@@ -117,8 +118,8 @@ If your account can view namespaces, confirm with:
 oc get namespace rhoai-data-registry
 ```
 
-If namespace visibility is restricted, ask the user who will create the
-connection Secret to confirm it exists.
+If namespace visibility is restricted, ask the person creating the connection
+Secret to confirm it exists.
 
 ### Create the registry instance
 
@@ -186,7 +187,8 @@ oc wait --for=jsonpath='{.status.phase}'=Ready \
 oc get featurestore/data-registry -n rhoai-data-registry
 ```
 
-In the RHOAI dashboard, open **AI hub** and then **Data Tech Preview**.
+In the RHOAI dashboard, open **AI hub → Data**. The **Data** item carries a
+**Tech Preview** badge.
 Confirm that the **Data assets** page loads. Select a project you can access;
 an empty project shows **No data assets**. If no project is available, create
 your first project in [Step 2](../02-register-data-asset/README.md).

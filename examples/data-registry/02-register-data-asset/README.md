@@ -1,21 +1,13 @@
-# Step 2: Register a Data Asset
+# Step 2: Register a data asset
 
-[← Step 1: Configure the registry](../01-configure-data-registry/README.md) ·
+[← Step 1: Configure the Data Registry](../01-configure-data-registry/README.md) ·
 [Step 3: Use the Data Registry API →](../03-use-registry-api/README.md) ·
 [Guide index](../README.md)
 
-**Minimum persona:** An **RHOAI user** who can request a project, or who
-already has project `admin` in the target project. A reachable S3-compatible
-service must also be available.
-
-For the sample-user walkthrough, sign in as `rhoai-user-data-curator`. If you
-need a new project, create it while signed in as this user. The default
-OpenShift project request assigns the requester project `admin`; if your
-cluster uses a custom project request template, confirm that it preserves this
-behavior. If another account creates the project, that account becomes the
-requester, so make sure the curator already has project `admin` in it.
-Alternatively, use your own RHOAI user account if it can request a project or
-already has project `admin` in the target project.
+**Minimum persona:** An **RHOAI user** who can request a project or already has
+project `admin` in the target project. Use `rhoai-user-data-curator` for the
+sample-user walkthrough, or your own RHOAI user account. A reachable
+S3-compatible service must also be available.
 
 In this walkthrough, you use an RHOAI project, connect it to an S3-compatible
 object store, upload one fictional support document, and register that document
@@ -198,8 +190,14 @@ the default SeaweedFS endpoint, see the next section.
 
 ### Optional: verify an in-cluster SeaweedFS connection
 
-This check does not block asset registration. Adding the policies below needs
-a cluster admin or a user delegated permission to create NetworkPolicies in
+This check does not block asset registration. If verification times out, expand
+the network checks below; otherwise, continue to section 4.
+
+<details>
+<summary>Network checks and policies for dashboard verification</summary>
+
+Applying the policies below requires a cluster admin or someone delegated
+permission to create NetworkPolicies in
 `redhat-ods-applications`; project `admin` in the example project is insufficient.
 
 The dashboard's **Verify connection** action crosses two network paths: the
@@ -215,9 +213,8 @@ For the in-cluster SeaweedFS endpoint, the Core BFF pod also needs egress to
 SeaweedFS on TCP port `8333`; if that path is blocked, apply the
 [SeaweedFS egress policy](../supplementary/dashboard-seaweedfs-egress.yaml).
 Both policies are additive and leave the operator-managed dashboard policy
-unchanged. The tested RHOAI 3.6 cluster needed both: applying the SeaweedFS
-policy alone still returned HTTP `504` because the dashboard proxy could not
-reach the Core BFF service.
+unchanged. A blocked dashboard-to-Core-BFF path can still return HTTP `504`
+after the SeaweedFS policy is applied.
 
 The SeaweedFS-specific policy is only relevant when all of the following
 apply:
@@ -267,11 +264,7 @@ oc delete -f ../supplementary/dashboard-seaweedfs-egress.yaml
 The policy is for the dashboard verification request only. A workbench that
 reads S3 objects needs its own permitted network path.
 
-Validation on RHOAI 3.6 found that the operator-managed dashboard egress policy
-did not allow TCP port `8943` between dashboard pods. The dashboard proxy
-timed out connecting to the Core BFF before the S3 check ran. Adding the narrow
-Core BFF policy and the SeaweedFS `8333` policy allowed **Verify connection**
-to succeed.
+</details>
 
 ## 4. Create a collection
 

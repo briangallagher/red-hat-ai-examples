@@ -5,14 +5,11 @@ project. It stores metadata and location/connection references; the data stays
 in its source system. This walkthrough enables the registry and shows how to
 discover and read an asset from a workbench.
 
-For convenience, you can run this guide as a cluster admin. For a more realistic
-multi-persona workflow, use an **RHOAI admin** for setup (Step 1) and an
-**RHOAI user** who creates the project for Steps 2–3. With the default
-OpenShift project request template, the requester receives project `admin`;
-RHOAI admin status alone does not grant project `admin`. Some optional prerequisites, such as creating sample users, require a cluster
-admin. The user listed for a core step may still need cluster-admin access for
-security-related tasks such as creating Secrets or NetworkPolicies. Step 4 is
-optional.
+You can run the guide as a cluster admin or use separate accounts: an **RHOAI
+admin** for Step 1 and an **RHOAI user** with project `admin` for Steps 2–3 and
+optional Step 4. Sample-user provisioning and some supporting resources may
+need an identity-provider or cluster admin, or delegated OpenShift permissions.
+RHOAI admin status alone does not grant project `admin`.
 
 > **Optional prerequisite — sample users:** Follow the
 > [Create sample users and roles](supplementary/users-and-roles.md) guide for
@@ -39,14 +36,7 @@ optional.
 
 | Step | Guide | Outcome | User |
 | --- | --- | --- | --- |
-| 1 | [Configure registry](01-configure-data-registry/README.md) | Enabled registry and dashboard | RHOAI admin |
-| 2 | [Register asset](02-register-data-asset/README.md) | Project created or selected; S3 asset registered | RHOAI user (project requester and `admin`) |
-| 3 | [Use API](03-use-registry-api/README.md) | Read an asset; register another via API | RHOAI user (project `admin`) |
-| 4&nbsp;(optional) | [Share assets](04-share-registry-access/README.md) | Project-wide or registry-only access | RHOAI user (project `admin`) |
-
-The guide targets RHOAI 3.6. Before Step 1, an RHOAI admin should verify
-component settings and role names on the cluster. Creating the registry
-connection Secret may require a cluster admin or delegated OpenShift
-permissions. In Step 2, create a new project while signed in as the RHOAI user,
-or use an existing project where that user has `admin`. Step 3 also needs
-Workbenches, an attached S3 connection, and the RHOAI user's current token.
+| 1 | [Configure the Data Registry](01-configure-data-registry/README.md) | Enabled registry and dashboard | RHOAI admin |
+| 2 | [Register a data asset](02-register-data-asset/README.md) | Project created or selected; S3 asset registered | RHOAI user (project `admin`) |
+| 3 | [Use the Data Registry API](03-use-registry-api/README.md) | Read an asset; register another via API | RHOAI user (project `admin`) |
+| 4&nbsp;(optional) | [Share Data Registry assets](04-share-registry-access/README.md) | Project-wide or registry-only access | RHOAI user (project `admin`) |

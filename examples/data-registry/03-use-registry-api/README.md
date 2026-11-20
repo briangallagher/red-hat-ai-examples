@@ -1,7 +1,7 @@
 # Step 3: Use the Data Registry API
 
-[← Step 2: Register an asset](../02-register-data-asset/README.md) ·
-[Optional Step 4: Share access →](../04-share-registry-access/README.md) ·
+[← Step 2: Register a data asset](../02-register-data-asset/README.md) ·
+[Step 4 (optional): Share Data Registry assets →](../04-share-registry-access/README.md) ·
 [Guide index](../README.md)
 
 **Minimum persona:** An **RHOAI user** with project `admin` permissions in the

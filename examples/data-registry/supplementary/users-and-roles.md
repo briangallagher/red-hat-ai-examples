@@ -47,13 +47,10 @@ RHOAI group membership and project permissions are separate. Membership in
 existing OpenShift grants in section 3; a cluster admin grants only missing
 permissions and handles the registry connection Secret.
 
-Create `data-registry-example` in Step 2 while signed in as
-`rhoai-user-data-curator`. With the default OpenShift project request template,
-the requester receives project `admin`. If your cluster uses a custom project
-request template, confirm that it grants the requester project `admin`; if
-another account creates the project, the curator needs existing project
-`admin`. The second user receives a project role only when you perform the
-sharing step.
+In [Step 2](../02-register-data-asset/README.md), sign in as
+`rhoai-user-data-curator` to create `data-registry-example`. That step explains
+how to confirm the curator's project `admin` role. The second user receives
+access only when you perform the sharing step.
 
 ## Access and hand-offs
 

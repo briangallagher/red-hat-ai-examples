@@ -1,6 +1,7 @@
 # Step 4 (optional): Share Data Registry assets
 
-[← Step 3: Use the API](../03-use-registry-api/README.md) · [Guide index](../README.md)
+[← Step 3: Use the Data Registry API](../03-use-registry-api/README.md) ·
+[Guide index](../README.md)
 
 **Minimum persona:** An **RHOAI user** with project `admin` permissions in the
 project containing the assets.
@@ -243,43 +244,6 @@ For a group, use a distinct binding name and replace the `--user` option with
 registry role and project-discovery binding. With this optional grant, access
 includes project credential reads as well as catalog access.
 
-To revoke only this example user's optional Secret-list grant:
-
-```bash
-oc delete rolebinding data-registry-connection-secret-list-recipient \
-  -n data-registry-example
-```
-
-The registry and project-discovery bindings remain in place. Review other
-bindings too: removing this binding does not remove permissions granted
-elsewhere.
-
-## Reset before trying another option
-
-The user commands above use separate RoleBinding names. After testing, delete
-only the binding you created:
-
-| Grant tested | RoleBinding to remove |
-| --- | --- |
-| Project `view` | `data-registry-project-view-recipient` |
-| Project `admin` | `data-registry-project-admin-recipient` |
-| Registry viewer | `data-registry-viewer-recipient` |
-| Registry admin | `data-registry-admin-recipient` |
-
-```bash
-# Set this to the binding from your completed test.
-BINDING=data-registry-project-view-recipient
-oc delete rolebinding "$BINDING" -n data-registry-example
-```
-
-For Option 2, also remove `data-registry-project-discovery-recipient` and
-`data-registry-connection-secret-list-recipient` if you created them. For a
-group or manifest example, use that example's binding names. Recheck the
-recipient's project visibility, effective rules, and actual API access after
-revocation propagates. They should match the state before the test; other
-pre-existing grants still apply. Reset before granting the next role, because
-permissions from multiple bindings add together.
-
 ## Verify the result
 
 Use a separate CLI session authenticated as the **recipient** to inspect its
@@ -333,3 +297,40 @@ The registry roles control catalog access. Access to the underlying S3 objects o
 other data sources depends on their own credentials and policies. The
 optional Secret-list grant can expose those credentials; review that
 additional access explicitly when sharing an asset or its project.
+
+## Reset after verifying each option
+
+To revoke only this example user's optional Secret-list grant:
+
+```bash
+oc delete rolebinding data-registry-connection-secret-list-recipient \
+  -n data-registry-example
+```
+
+The registry and project-discovery bindings remain in place. Review other
+bindings too: removing this binding does not remove permissions granted
+elsewhere.
+
+To reset a project or registry role test, delete the RoleBinding created for
+that choice. The example commands use separate names:
+
+| Grant tested | RoleBinding to remove |
+| --- | --- |
+| Project `view` | `data-registry-project-view-recipient` |
+| Project `admin` | `data-registry-project-admin-recipient` |
+| Registry viewer | `data-registry-viewer-recipient` |
+| Registry admin | `data-registry-admin-recipient` |
+
+```bash
+# Set this to the binding from your completed test.
+BINDING=data-registry-project-view-recipient
+oc delete rolebinding "$BINDING" -n data-registry-example
+```
+
+For Option 2, also remove `data-registry-project-discovery-recipient` and
+`data-registry-connection-secret-list-recipient` if you created them. For a
+group or manifest example, use that example's binding names. Recheck the
+recipient's project visibility, effective rules, and actual API access after
+revocation propagates. They should match the state before the test; other
+pre-existing grants still apply. Reset before granting the next role, because
+permissions from multiple bindings add together.
