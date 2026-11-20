@@ -40,8 +40,14 @@ SeaweedFS values are shown.
   credentials, and test upload.
 - Have project `admin` permissions to create the connection, collection, and
   asset. If you need a new project, create it as the signed-in user in section 1.
+- For SeaweedFS, keep a separate storage-admin terminal with permission to read
+  `Secret/seaweedfs-credentials` in `data-registry-storage`. The curator's
+  project role does not grant access to that namespace.
 - Keep credentials out of Git, screenshots, asset descriptions, and notebook
   outputs. This example's document contains only synthetic information.
+
+Run terminal commands from `examples/data-registry/02-register-data-asset/` in
+your checkout unless a linked guide says otherwise.
 
 Already have the RHOAI project and S3 connection? Skip sections 1 and 3, and
 use their names and endpoint in the remaining steps. Confirm that the
@@ -61,7 +67,7 @@ The example names below are used throughout Steps 2 and 3:
 
 ## 1. Create or select the RHOAI project
 
-In the RHOAI dashboard, open **Data Science Projects**. If
+In the RHOAI dashboard, open **Projects**. If
 `data-registry-example` does not exist, create it while signed in as
 `rhoai-user-data-curator` (or your own RHOAI user). With the default OpenShift
 project request template, the requesting user receives the project `admin`
@@ -88,7 +94,7 @@ material.
 
 ### SeaweedFS (default)
 
-Follow the [SeaweedFS S3 verification](../supplementary/s3-compatible-storage.md#verify-the-s3-api)
+In the storage-admin terminal, follow the [SeaweedFS S3 verification](../supplementary/s3-compatible-storage.md#verify-the-s3-api)
 to start the port-forward and load the credentials from
 `Secret/seaweedfs-credentials`. Keep the port-forward running. From this
 directory, upload the FAQ and confirm the object key:
@@ -149,19 +155,24 @@ chose an existing service.
 
 | Connection field | Example value | What it means |
 | --- | --- | --- |
-| Name | `data-registry-storage` | The connection resource used by the asset and workbench. |
+| Connection name | `data-registry-storage` | The connection resource used by the asset and workbench. |
 | Access key | From `Secret/seaweedfs-credentials` | SeaweedFS only. For another service, use its approved scoped access key. |
 | Secret key | From the same Secret | SeaweedFS only. For another service, use its approved secret key. Never include it in screenshots. |
 | Endpoint | `http://seaweedfs.data-registry-storage.svc:8333` | SeaweedFS S3 API endpoint. For another service, use its endpoint. Do not use SeaweedFS Admin port 12646. |
 | Region | `us-east-1` | SeaweedFS example signing region. For another service, use the region it requires. |
 | Bucket | `data-registry-example` | SeaweedFS example bucket. For another service, use the bucket you uploaded to. |
 
-For SeaweedFS, copy each key from the Secret without printing it. On macOS, for
-example:
+For SeaweedFS, use the storage-admin terminal to copy each key without printing
+it. On macOS, copy the access key, then paste it into **Access key**:
 
 ```bash
 oc -n data-registry-storage get secret seaweedfs-credentials \
   -o jsonpath='{.data.AWS_ACCESS_KEY_ID}' | openssl base64 -d -A | pbcopy
+```
+
+Then copy the secret key and paste it into **Secret key**:
+
+```bash
 oc -n data-registry-storage get secret seaweedfs-credentials \
   -o jsonpath='{.data.AWS_SECRET_ACCESS_KEY}' | openssl base64 -d -A | pbcopy
 ```
@@ -175,7 +186,7 @@ identify the storage provider. The `.svc` endpoint is for workloads inside
 the cluster. The workstation uses a port-forward only for the SeaweedFS upload.
 
 After saving, check that `data-registry-storage` appears on the project's
-**Connections** tab. Optionally, choose **Verify connection** from its action
+**Connections** tab. Optionally, choose **Verify** from its action
 menu to have the dashboard test S3 access. The connection contains
 configuration and credentials; it does not itself create a Data Registry
 asset or grant every project member S3 access. If verification times out for
@@ -186,6 +197,10 @@ the default SeaweedFS endpoint, see the next section.
 *The `data-registry-storage` connection is listed in the project. This example view shows its status as Unverified.*
 
 ### Optional: verify an in-cluster SeaweedFS connection
+
+This check does not block asset registration. Adding the policies below needs
+a cluster admin or a user delegated permission to create NetworkPolicies in
+`redhat-ods-applications`; project `admin` in the example project is insufficient.
 
 The dashboard's **Verify connection** action crosses two network paths: the
 dashboard proxy connects to the Core BFF service on TCP port `8943`, then the
@@ -215,12 +230,8 @@ apply:
 The SeaweedFS policy is not needed for an external S3 endpoint, when that
 egress path is already allowed, or when you skip the optional check. The Core
 BFF policy is needed only if dashboard-to-Core-BFF egress on TCP port `8943` is
-blocked. Ask an RHOAI admin with network-policy permissions to apply the
-narrow policy or policies for the blocked path. Creating these policies
-requires `create` permission for NetworkPolicies in `redhat-ods-applications`;
-project-admin access in `data-registry-example` does not grant it. This is
-often a cluster-admin task, though a delegated namespace admin may also have
-the permission. Check the identity that will apply them:
+blocked. In the administrator's terminal, check the identity that will apply
+the narrow policy or policies for the blocked path:
 
 ```bash
 oc auth can-i create networkpolicies.networking.k8s.io \
