@@ -24,6 +24,12 @@ in `data-registry-example`. With the sample accounts, this is
 `rhoai-user-data-curator`, which received project `admin` when it created the
 project in Step 2. Use the recipient's own session only for verification.
 
+For group examples, replace `example-group` with an existing OpenShift group
+and verify as one of its members. Group provisioning is outside this step.
+
+Use unused RoleBinding names for these tests; choose new names if an example
+name is already occupied. Preserve existing bindings when resetting access.
+
 | Step 4 action | Who can apply it |
 | --- | --- |
 | Grant project `view` or `admin` in Option 1 | A user with project `admin` in the target project. |
@@ -67,20 +73,24 @@ access to another RHOAI user by running **one** of these commands:
 
 ```bash
 # Give the RHOAI user project-wide read access, including Data Registry assets.
-oc adm policy add-role-to-user view rhoai-user-recipient -n data-registry-example
+oc adm policy add-role-to-user view rhoai-user-recipient -n data-registry-example \
+  --rolebinding-name=data-registry-project-view-recipient
 
 # Or give the RHOAI user project-wide administration, including Data Registry
 # assets.
-oc adm policy add-role-to-user admin rhoai-user-recipient -n data-registry-example
+oc adm policy add-role-to-user admin rhoai-user-recipient -n data-registry-example \
+  --rolebinding-name=data-registry-project-admin-recipient
 ```
 
 For a group, use the matching command:
 
 ```bash
-oc adm policy add-role-to-group view example-group -n data-registry-example
+oc adm policy add-role-to-group view example-group -n data-registry-example \
+  --rolebinding-name=data-registry-project-view-example-group
 
 # Or, for project-wide administration:
-oc adm policy add-role-to-group admin example-group -n data-registry-example
+oc adm policy add-role-to-group admin example-group -n data-registry-example \
+  --rolebinding-name=data-registry-project-admin-example-group
 ```
 
 Project roles affect more than Data Registry, so use this option when the
@@ -95,7 +105,7 @@ to enable connection discovery and selection with the optional Secret-list
 grant below.
 
 The catalog and project-discovery behavior in this section was verified on
-RHOAI 3.6 with OpenShift 4.22.23 on 19 November 2026. Check the recipient's
+RHOAI 3.6 with OpenShift 4.22.23 on 20 November 2026. Check the recipient's
 effective permissions and actual dashboard behavior on your installation.
 
 ### 1. Choose the catalog permissions
@@ -122,22 +132,26 @@ For an RHOAI user, select the level of access and run **one** command:
 ```bash
 # Let the RHOAI user view Data Registry assets in this project.
 oc adm policy add-role-to-user feast-data-registry-viewer \
-  rhoai-user-recipient -n data-registry-example
+  rhoai-user-recipient -n data-registry-example \
+  --rolebinding-name=data-registry-viewer-recipient
 
 # Or let the RHOAI user manage Data Registry assets in this project.
 oc adm policy add-role-to-user feast-data-registry-admin \
-  rhoai-user-recipient -n data-registry-example
+  rhoai-user-recipient -n data-registry-example \
+  --rolebinding-name=data-registry-admin-recipient
 ```
 
 For a group, use the matching group command:
 
 ```bash
 oc adm policy add-role-to-group feast-data-registry-viewer \
-  example-group -n data-registry-example
+  example-group -n data-registry-example \
+  --rolebinding-name=data-registry-viewer-example-group
 
 # Or, for people who should manage the registry assets:
 oc adm policy add-role-to-group feast-data-registry-admin \
-  example-group -n data-registry-example
+  example-group -n data-registry-example \
+  --rolebinding-name=data-registry-admin-example-group
 ```
 
 Equivalent RoleBinding examples are provided for a [viewer user](rbac/viewer-user-rolebinding.yaml),
@@ -240,6 +254,32 @@ The registry and project-discovery bindings remain in place. Review other
 bindings too: removing this binding does not remove permissions granted
 elsewhere.
 
+## Reset before trying another option
+
+The user commands above use separate RoleBinding names. After testing, delete
+only the binding you created:
+
+| Grant tested | RoleBinding to remove |
+| --- | --- |
+| Project `view` | `data-registry-project-view-recipient` |
+| Project `admin` | `data-registry-project-admin-recipient` |
+| Registry viewer | `data-registry-viewer-recipient` |
+| Registry admin | `data-registry-admin-recipient` |
+
+```bash
+# Set this to the binding from your completed test.
+BINDING=data-registry-project-view-recipient
+oc delete rolebinding "$BINDING" -n data-registry-example
+```
+
+For Option 2, also remove `data-registry-project-discovery-recipient` and
+`data-registry-connection-secret-list-recipient` if you created them. For a
+group or manifest example, use that example's binding names. Recheck the
+recipient's project visibility, effective rules, and actual API access after
+revocation propagates. They should match the state before the test; other
+pre-existing grants still apply. Reset before granting the next role, because
+permissions from multiple bindings add together.
+
 ## Verify the result
 
 Use a separate CLI session authenticated as the **recipient** to inspect its
@@ -278,7 +318,11 @@ Some `oc` versions cannot check Data Registry's virtual resources directly
 with `oc auth can-i`; the effective rule list and an actual Data Registry
 request are more reliable checks. Authorization caches can delay the effect
 of grants and revocations, so recheck actual requests after permissions have
-propagated.
+propagated. A successful RoleBinding deletion alone does not prove that an
+existing session has lost access. Check both reads and writes with the
+recipient's existing session: a cached write decision can outlive a read
+decision. Use disposable records for mutation checks, remove them, and confirm
+denial before testing another role.
 
 On the tested dashboard, viewers still saw write controls even though the
 API rejected their writes. Changing a connection reference through the API

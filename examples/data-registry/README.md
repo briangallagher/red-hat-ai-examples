@@ -19,18 +19,18 @@ optional.
 > separate accounts: `rhoai-admin` (Step 1),
 > `rhoai-user-data-curator` (Steps 2–3), and `rhoai-user-recipient` (Step 4).
 > Use your own RHOAI accounts if they have the required access.
-
+>
 > **Optional prerequisite — S3 storage:** Use the
 > [SeaweedFS evaluation setup](supplementary/s3-compatible-storage.md) for the
 > sample object, or use an existing approved S3-compatible service.
-
+>
 > **Optional prerequisite — demo PostgreSQL:** The Data Registry needs a
 > reachable PostgreSQL database for its metadata. Reuse an existing approved
 > database, or follow the [supplementary demo PostgreSQL
 > setup](supplementary/postgresql-demo.md) to deploy one in a separate
 > project. The demo database is optional; a metadata database is required to
 > run the example.
-
+>
 > **Technology Preview:** Technology Preview features are not supported with
 > Red Hat production service-level agreements (SLAs), might not be functionally
 > complete, and are not recommended for production.
@@ -49,5 +49,4 @@ component settings and role names on the cluster. Creating the registry
 connection Secret may require a cluster admin or delegated OpenShift
 permissions. In Step 2, create a new project while signed in as the RHOAI user,
 or use an existing project where that user has `admin`. Step 3 also needs
-Workbenches, an attached S3 connection, and a namespaced registry role for its
-ServiceAccount.
+Workbenches, an attached S3 connection, and the RHOAI user's current token.
