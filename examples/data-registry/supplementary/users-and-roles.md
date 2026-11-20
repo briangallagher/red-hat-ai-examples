@@ -1,5 +1,11 @@
 # Optional prerequisite: Create sample users and roles
 
+> **Who runs these steps:** A cluster admin or identity-provider administrator
+> provisions accounts. A cluster admin or delegated OpenShift administrator
+> handles group changes and missing permissions. Then use `rhoai-admin` for
+> Step 1, `rhoai-user-data-curator` for Steps 2–3, and `rhoai-user-recipient`
+> to verify Step 4.
+
 This guide sets up three separate accounts for the Data Registry walkthrough:
 an **RHOAI admin** for Step 1, an **RHOAI user** who creates the project for
 Steps 2–3, and a second **RHOAI user** to receive access in Step 4. The
@@ -12,11 +18,14 @@ already have them. The sample users use the groups shown in RHOAI
 `rhods-admins` for administrators and `system:authenticated` for users. This
 guide does not create or replace those groups.
 
-> **Demonstration accounts only:** Create these accounts on an isolated
-> development or test cluster, not a shared or production cluster. After the
-> walkthrough, revoke the grants made here, remove `rhoai-admin` from
-> `rhods-admins` if added here, and delete only accounts created for this guide
-> through your identity provider's normal process.
+> **Development and test only — consult your cluster administrator.** Before
+> creating accounts, ask which identity and access-control process your
+> organization approves. This is one example for an isolated development or
+> test cluster; it may not meet your organization's security requirements and
+> is not a production recommendation. After the walkthrough, revoke the grants
+> made here, remove `rhoai-admin` from `rhods-admins` if added, and delete only
+> accounts created for this guide through your identity provider's normal
+> process.
 
 ## Example accounts and access
 
@@ -91,7 +100,7 @@ the accounts to demonstrate the minimum access for each step. Option 2 in
 [Step 4](../04-share-registry-access/README.md) uses a registry-only role; its
 project-selector discovery requirement is covered there.
 
-## 1. Create the three login identities
+## 1. Provision the identities (cluster admin and identity-provider administrator)
 
 OpenShift authenticates users through the cluster's configured identity
 provider. `oc adm groups` creates OpenShift groups; it does not create login
@@ -149,7 +158,7 @@ oc whoami
 
 Repeat with `rhoai-user-data-curator` and `rhoai-user-recipient`.
 
-## 2. Use the groups already configured for RHOAI
+## 2. Assign group membership (cluster admin; RHOAI admin verifies)
 
 RHOAI User Management uses the existing `rhods-admins` group for **Red Hat
 OpenShift AI administrator groups** and the built-in `system:authenticated`
@@ -179,7 +188,7 @@ need no group-membership change. Project roles and some setup permissions
 require separate grants. See the RHOAI documentation for [managing users and
 groups](https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed/3.5/html/managing_openshift_ai/managing-users-and-groups).
 
-## 3. Check rhoai-admin permissions
+## 3. Verify Step 1 access (`rhoai-admin`; cluster admin grants missing access)
 
 Log in again as `rhoai-admin` after the group update. Check permissions in its
 own session so the checks include its actual group membership:
@@ -194,8 +203,7 @@ oc auth can-i patch odhdashboardconfigs \
 
 Both checks should print `yes`. If either prints `no`, have a cluster admin
 grant only the missing scoped permissions through reviewed RBAC roles.
-Check namespace-scoped create permissions after the target namespace exists;
-Step 1 retains a cluster-admin handoff for the registry connection Secret.
+Check namespace-scoped create permissions after the target namespace exists. Step 1 requires a user with permission to create the registry connection Secret.
 Do not grant `cluster-admin` just to make the RHOAI group work.
 
 ## 4. Use each account in the walkthrough
