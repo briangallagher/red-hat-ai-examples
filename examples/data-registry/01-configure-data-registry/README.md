@@ -2,9 +2,9 @@
 
 This step uses an **RHOAI admin** account with permission to configure RHOAI
 components. If you followed the optional sample-user guide, use
-`rhoai-admin`; otherwise, use your own RHOAI admin account. A cluster admin or
-a user with delegated permissions must also create the registry connection
-Secret in the RHOAI-managed namespace after it is created. Then use
+`rhoai-admin`; otherwise, use your own RHOAI admin account. Keep a separate
+**cluster-admin terminal** for the namespace and connection Secret handoff
+below; a user with delegated permissions can also perform that handoff. Then use
 `rhoai-user-data-curator`, or your own RHOAI user with project `admin`
 permissions, for [Step 2](../02-register-data-asset/README.md). For a
 separate-account walkthrough, see the optional
@@ -34,17 +34,20 @@ authorization boundaries.
 You need:
 
 - Red Hat OpenShift AI 3.6 installed on OpenShift;
-- the `oc` command-line interface logged in to the cluster;
+- an `oc` client matching your OpenShift version, logged in to the cluster;
 - an RHOAI admin account with permission to manage the DataScienceCluster,
   dashboard configuration, and supporting resources for this Technology Preview;
 - a reachable PostgreSQL database for registry metadata, using an existing
   service or following the optional [demo PostgreSQL
-  setup](../supplementary/postgresql-demo.md) linked from the landing page; and
+  setup](../supplementary/postgresql-demo.md) linked from the landing page.
 
 After this setup, an RHOAI user with project `admin` permissions can follow
 Steps 2 and 3 and, if needed, optional Step 4 without cluster-wide admin access.
 
 ## Enable and deploy the Data Registry
+
+Run commands from `examples/data-registry/01-configure-data-registry/` in your
+repository checkout unless a linked supplementary guide says otherwise.
 
 ### Enable the component
 
@@ -54,20 +57,12 @@ Find the `DataScienceCluster` resource used by your RHOAI installation:
 oc get datasciencecluster
 ```
 
-Edit that resource. The following example assumes its name is `default-dsc`:
+In the RHOAI admin terminal, patch that resource (`default-dsc` below) to
+enable only the Data Registry component:
 
 ```bash
-oc edit datasciencecluster default-dsc
-```
-
-In the RHOAI 3.6 `DataScienceCluster` API, set the Data Registry management state to `Managed`:
-
-```yaml
-spec:
-  components:
-    data:
-      dataRegistry:
-        managementState: Managed
+oc patch datasciencecluster default-dsc --type=merge \
+  -p '{"spec":{"components":{"data":{"dataRegistry":{"managementState":"Managed"}}}}}'
 ```
 
 The Feature Store and Data Registry management states are independent. Do not change the Feature Store state unless you also intend to enable or disable that component.
@@ -108,10 +103,17 @@ The command should print `true`. If your installation uses a different
 command above. Changing the `DataScienceCluster` management state alone does
 not make the Data Registry appear in the dashboard.
 
-Wait for RHOAI to create the service namespace:
+Wait for the DataScienceCluster to report `Ready`:
 
 ```bash
 oc wait --for=jsonpath='{.status.phase}'=Ready datasciencecluster/default-dsc --timeout=10m
+```
+
+In the **cluster-admin terminal**, wait for the service namespace before the
+Secret handoff. RHOAI group membership alone does not grant namespace access:
+
+```bash
+oc wait --for=create namespace/rhoai-data-registry --timeout=10m
 oc get namespace rhoai-data-registry
 ```
 
@@ -128,13 +130,9 @@ The demo deployment is for evaluation only, not production. If you share a
 PostgreSQL server with a Feast Feature Store, use a separate database and user
 for the Data Registry when possible.
 
-The `FeatureStore` reads its connection settings from the
-`data-registry-database` Secret in `rhoai-data-registry`. Secrets are
-namespace-scoped, so a copy in the PostgreSQL project's namespace cannot be
-used by the registry. The `rhoai-data-registry` namespace is created after
-you enable the Data Registry component above. Once it exists, have a cluster
-admin create the connection Secret, or ask them to grant the responsible user
-scoped permission to create Secrets in this namespace:
+The `FeatureStore` reads `Secret/data-registry-database` in
+`rhoai-data-registry`; a Secret in the PostgreSQL namespace cannot be used
+directly. In the **cluster-admin terminal**, create it using one of these paths:
 
 - For the demo database, follow the [connection Secret instructions in the
   supplementary guide](../supplementary/postgresql-demo.md#configure-the-data-registry-connection).
@@ -149,7 +147,8 @@ scoped permission to create Secrets in this namespace:
 Never commit a Secret containing real credentials. If the password contains
 reserved URI characters, URL-encode it before using it in the DSN.
 
-Review [feature-store.yaml](feature-store.yaml), then create the instance:
+Back in the **RHOAI admin terminal**, review
+[feature-store.yaml](feature-store.yaml), then create the instance:
 
 ```bash
 oc apply -f feature-store.yaml
@@ -180,12 +179,14 @@ oc get featurestore/data-registry -n rhoai-data-registry
 ```
 
 In the RHOAI dashboard, open **AI hub** and then **Data Tech Preview**.
-Confirm that the **Data assets** page loads and that you can select an RHOAI
-project.
+Confirm that the **Data assets** page loads. Select a project you can access;
+an empty project shows **No data assets**. If no project is available, create
+your first project in [Step 2](../02-register-data-asset/README.md).
 
 ![Data Registry empty state in the RHOAI 3.6 AI hub Data page, with the agent-sandbox-system project selected.](images/data-registry-empty-state.png)
 
-If the page does not load, first inspect the `FeatureStore` status and workload events:
+If the page does not load, inspect the `FeatureStore` and events from the
+**cluster-admin terminal**; the RHOAI admin may not have pod/event access:
 
 ```bash
 oc describe featurestore/data-registry -n rhoai-data-registry

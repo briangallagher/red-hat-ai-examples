@@ -34,11 +34,11 @@ oc new-project "$POSTGRES_NAMESPACE"
 
 Generate a demo password and store the database settings in a Secret. The
 password uses hexadecimal characters, which are safe in the registry's
-PostgreSQL connection URI. Keep the shell variable until you create the
-Data Registry connection Secret after enabling the component in Step 1; the
-commands do not print it.
+PostgreSQL connection URI. The connection step below reloads it from this
+Secret, so you can use a separate terminal. The commands do not print it.
 
 ```bash
+set +x
 POSTGRESQL_PASSWORD="$(openssl rand -hex 24)"
 oc create -f - <<EOF
 apiVersion: v1
@@ -52,6 +52,7 @@ stringData:
   POSTGRESQL_PASSWORD: "${POSTGRESQL_PASSWORD}"
   POSTGRESQL_DATABASE: data_registry
 EOF
+unset POSTGRESQL_PASSWORD
 ```
 
 From this `supplementary/` directory in the repository checkout, apply the
@@ -75,12 +76,20 @@ After enabling the Data Registry component in
 [Step 1](../01-configure-data-registry/README.md), wait for the
 `rhoai-data-registry` namespace to be created. Then create the Secret that the
 Data Registry reads in that namespace. A cluster admin or a user delegated
-permission to create Secrets there must run this command; membership in
-`rhods-admins` alone does not grant that OpenShift permission. The Secret
-stores the endpoint, database credentials, and Feast SQL configuration. The
-password is not written to a local file or displayed by the command:
+access to the database Secret and permission to create the connection Secret
+must run this command; `rhods-admins` membership alone does not grant that access.
+The Secret stores the endpoint, database credentials, and Feast SQL configuration. In the
+cluster-admin terminal, reload the original password from the database Secret.
+Use your database namespace if it differs from the default below:
 
 ```bash
+set -euo pipefail
+set +x
+export POSTGRES_NAMESPACE=data-registry-postgres
+POSTGRESQL_PASSWORD="$(oc get secret postgresql-demo-credentials \
+  -n "$POSTGRES_NAMESPACE" -o jsonpath='{.data.POSTGRESQL_PASSWORD}' \
+  | openssl base64 -d -A)"
+
 oc create -f - <<EOF
 apiVersion: v1
 kind: Secret
