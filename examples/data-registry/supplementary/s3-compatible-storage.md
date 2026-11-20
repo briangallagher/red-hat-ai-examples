@@ -52,23 +52,29 @@ installed; installing that product is outside this project-level example.
 
 ### Prerequisites
 
+> **Who runs these steps:** Creating the namespace requires a cluster admin or
+> a user delegated permission to create namespaces. Once it exists, a project
+> admin or delegated user with permission to manage Secrets, Deployments,
+> Services, and PVCs can install SeaweedFS. Optional NetworkPolicies in
+> `redhat-ods-applications` require cluster admin or delegated permissions in
+> that namespace; RHOAI admin membership alone does not grant them.
+
 Use a checkout of this repository and run the commands from
 `examples/data-registry/supplementary/`. You need `oc`, Python 3, the AWS
-CLI, `openssl`, and `curl` on your workstation. You also need
-permission to create a namespace and a dynamic `StorageClass` with at least
-10 Gi of capacity. A default StorageClass is simplest. If the cluster has no
-default, choose an available dynamic class from `oc get storageclass` and set
-`storageClassName` in the PVC in `seaweedfs.yaml` before applying it. Ask an
-RHOAI admin with namespace or storage class permissions if your access does not
-include those operations. The cluster must be able to pull
+CLI, `openssl`, and `curl` on your workstation. The cluster needs an available dynamic `StorageClass` with at least 10 Gi of
+capacity. A default class is simplest. If there is no default, choose an
+available dynamic class from `oc get storageclass` and set `storageClassName`
+in the PVC in `seaweedfs.yaml` before applying it. Ask a cluster admin or
+delegated OpenShift administrator if you cannot view or use a suitable class.
+The cluster must be able to pull
 `docker.io/chrislusf/seaweedfs:4.52` or an approved mirror of it.
 
-Dashboard connection verification is optional. If you use it, Step 2 may ask
-an RHOAI admin to apply NetworkPolicies in `redhat-ods-applications`; this is
-separate from installing SeaweedFS in `data-registry-storage`. Applying those
-policies requires `create` permission for NetworkPolicies in
-`redhat-ods-applications`; project permissions in `data-registry-example` do
-not grant it. This permission is often held by a cluster admin. Check with:
+Dashboard connection verification is optional. Its NetworkPolicies are
+applied in `redhat-ods-applications`, separate from SeaweedFS in
+`data-registry-storage`. They require `create` permission there; project
+permissions in `data-registry-example` do not grant it. A cluster admin or
+delegated user with access to `redhat-ods-applications` can apply them. Check
+with:
 
 ```bash
 oc auth can-i create networkpolicies.networking.k8s.io \
