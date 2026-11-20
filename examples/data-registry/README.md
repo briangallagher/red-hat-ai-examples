@@ -5,11 +5,13 @@ project. It stores metadata and location/connection references; the data stays
 in its source system. This walkthrough enables the registry and shows how to
 discover and read an asset from a workbench.
 
-This suggested multi-persona workflow uses an **RHOAI admin** for setup
-(Step 1) and an **RHOAI user** who creates the project for Steps 2–3. With the
-default OpenShift project request template, the requester receives project
-`admin`. One person can fill both roles, but RHOAI admin status alone does not
-imply project `admin`. Step 4 is optional.
+For convenience, you can run this guide as a cluster admin. For a more realistic
+multi-persona workflow, use an **RHOAI admin** for setup (Step 1) and an
+**RHOAI user** who creates the project for Steps 2–3. With the default
+OpenShift project request template, the requester receives project `admin`;
+RHOAI admin status alone does not grant project `admin`. Some optional
+prerequisites, such as creating sample users, require a cluster admin. Step 4
+is optional.
 
 > **Optional prerequisite — sample users:** Follow the
 > [Create sample users and roles](supplementary/users-and-roles.md) guide for
@@ -28,16 +30,6 @@ imply project `admin`. Step 4 is optional.
 > project. The demo database is optional; a metadata database is required to
 > run the example.
 
-> **Setup permissions:** Some setup actions require a cluster admin or a user
-> with specifically delegated permissions. The optional sample-user guide's
-> HTPasswd and group changes require a cluster admin; for other identity
-> providers, use the organization's identity-provider administrator. Step 1
-> also needs OpenShift permissions beyond membership in `rhods-admins`. In
-> particular, a cluster admin or delegated user must create the registry
-> connection Secret in the RHOAI-managed `rhoai-data-registry` namespace.
-> Step 1 creates that namespace after enabling the Data Registry component.
-> The demo PostgreSQL guide explains when to create the Secret.
-
 > **Technology Preview:** Technology Preview features are not supported with
 > Red Hat production service-level agreements (SLAs), might not be functionally
 > complete, and are not recommended for production.
@@ -51,8 +43,10 @@ imply project `admin`. Step 4 is optional.
 | 3 | [Use API](03-use-registry-api/README.md) | Read an asset; register another via API | RHOAI user (project `admin`) |
 | 4&nbsp;(optional) | [Share assets](04-share-registry-access/README.md) | Project-wide or registry-only access | RHOAI user (project `admin`) |
 
-The guide targets RHOAI 3.6. Before applying commands, an RHOAI admin should
-verify component settings and role names on the cluster. In Step 2, create a
-new project while signed in as the RHOAI user, or use an existing project where
-that user has `admin`. Step 3 also needs Workbenches, an attached S3
-connection, and a namespaced registry role for its ServiceAccount.
+The guide targets RHOAI 3.6. Before Step 1, an RHOAI admin should verify
+component settings and role names on the cluster. Creating the registry
+connection Secret may require a cluster admin or delegated OpenShift
+permissions. In Step 2, create a new project while signed in as the RHOAI user,
+or use an existing project where that user has `admin`. Step 3 also needs
+Workbenches, an attached S3 connection, and a namespaced registry role for its
+ServiceAccount.
